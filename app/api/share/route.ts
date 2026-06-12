@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { dataDir } from '@/lib/data-dir';
 import type { ShareData } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const dir = path.join(process.cwd(), '.shares');
+    const dir = dataDir('shares');
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 
     const data: ShareData = { idea, report, prd, preview, created_at: Date.now() };

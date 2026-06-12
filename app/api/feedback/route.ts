@@ -1,7 +1,8 @@
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { dataDir } from '@/lib/data-dir';
 
-const FEEDBACK_DIR = path.join(process.cwd(), '.feedback');
+const FEEDBACK_DIR = dataDir('feedback');
 
 export async function POST(request: Request) {
   try {

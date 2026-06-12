@@ -1,9 +1,10 @@
 import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { dataDir } from './data-dir';
 import { addCredits } from './credits';
 
-const CODES_DIR = path.join(process.cwd(), '.codes');
+const CODES_DIR = dataDir('codes');
 
 interface ActivationCode {
   code: string;

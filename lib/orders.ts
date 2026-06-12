@@ -1,9 +1,10 @@
 import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { dataDir } from './data-dir';
 import { addCredits } from './credits';
 
-const ORDERS_DIR = path.join(process.cwd(), '.orders');
+const ORDERS_DIR = dataDir('orders');
 
 interface OrderRecord {
   id: string;

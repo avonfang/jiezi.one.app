@@ -1,8 +1,9 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { dataDir } from './data-dir';
 
-const CREDITS_DIR = path.join(process.cwd(), '.credits');
+const CREDITS_DIR = dataDir('credits');
 
 function filePath(userId: string) {
   return path.join(CREDITS_DIR, `${userId}.json`);

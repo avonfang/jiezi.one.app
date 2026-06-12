@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { dataDir } from '@/lib/data-dir';
 
 export async function GET(
   _request: NextRequest,
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const filePath = path.join(process.cwd(), '.shares', `${id}.json`);
+    const filePath = path.join(dataDir('shares'), `${id}.json`);
 
     if (!existsSync(filePath)) {
       return Response.json({ error: '分享链接不存在或已过期' }, { status: 404 });
