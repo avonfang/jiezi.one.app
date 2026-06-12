@@ -4,39 +4,51 @@ import { search } from '@/lib/brave-search';
 import { useCredit, initCredits } from '@/lib/credits';
 import type { ValidationReport } from '@/lib/types';
 
+const encoder = new TextEncoder();
+
+function progressEvent(stage: string, message: string) {
+  return encoder.encode(JSON.stringify({ type: 'progress', stage, message }) + '\n');
+}
+
+function resultEvent(report: ValidationReport) {
+  return encoder.encode(JSON.stringify({ type: 'result', report }) + '\n');
+}
+
+function errorEvent(message: string) {
+  return encoder.encode(JSON.stringify({ type: 'error', message }) + '\n');
+}
+
 export async function POST(request: NextRequest) {
-  try {
-    const clientId = request.headers.get('x-client-id');
-    if (!clientId) {
-      return Response.json({ error: '缺少客户端标识' }, { status: 400 });
-    }
+  const clientId = request.headers.get('x-client-id');
+  if (!clientId) {
+    return Response.json({ error: '缺少客户端标识' }, { status: 400 });
+  }
 
-    await initCredits(clientId);
-    const deducted = await useCredit(clientId);
-    if (!deducted) {
-      return Response.json({ error: '验证次数不足，请充值', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
-    }
+  await initCredits(clientId);
+  const deducted = await useCredit(clientId);
+  if (!deducted) {
+    return Response.json({ error: '验证次数不足，请充值', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
+  }
 
-    const body = await request.json();
-    const idea = body?.idea?.trim();
+  const body = await request.json();
+  const idea = body?.idea?.trim();
+  if (!idea || typeof idea !== 'string' || idea.length < 4) {
+    return Response.json({ error: '请输入至少 4 个字符描述你的产品想法' }, { status: 400 });
+  }
 
-    if (!idea || typeof idea !== 'string' || idea.length < 4) {
-      return Response.json(
-        { error: '请输入至少 4 个字符描述你的产品想法' },
-        { status: 400 }
-      );
-    }
-
-    // Step 1: Extract structured info (including search keywords)
-    const extractResp = await chatCompletion([
-      {
-        role: 'system',
-        content:
-          '你是一个产品分析助手。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。',
-      },
-      {
-        role: 'user',
-        content: `从以下产品想法中提取结构化信息：
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        // Step 1: Extract structured info
+        controller.enqueue(progressEvent('extracting', '正在分析产品信息...'));
+        const extractResp = await chatCompletion([
+          {
+            role: 'system',
+            content: '你是一个产品分析助手。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。',
+          },
+          {
+            role: 'user',
+            content: `从以下产品想法中提取结构化信息：
 
 产品想法：${idea}
 
@@ -47,41 +59,42 @@ export async function POST(request: NextRequest) {
   "industry": "所属行业",
   "keywords": ["搜索关键词1", "搜索关键词2", "搜索关键词3"]
 }`,
-      },
-    ], { temperature: 0.3 });
+          },
+        ], { temperature: 0.3 });
 
-    let extracted: { target_users: string; core_features: string; industry: string; keywords: string[] };
-    try {
-      extracted = JSON.parse(extractResp);
-    } catch {
-      extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
-    }
+        let extracted: { target_users: string; core_features: string; industry: string; keywords: string[] };
+        try {
+          extracted = JSON.parse(extractResp);
+        } catch {
+          extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
+        }
 
-    // Step 2: Search for competitors (with URLs for citation)
-    const searchResults: { name: string; snippet: string; url: string }[] = [];
-    for (const keyword of (extracted.keywords || []).slice(0, 3)) {
-      try {
-        const results = await search(keyword, 5);
-        searchResults.push(...results);
-      } catch {
-        // continue if one keyword fails
-      }
-    }
+        // Step 2: Search for competitors
+        controller.enqueue(progressEvent('searching', '正在搜索竞品...'));
+        const searchResults: { name: string; snippet: string; url: string }[] = [];
+        for (const keyword of (extracted.keywords || []).slice(0, 3)) {
+          try {
+            const results = await search(keyword, 5);
+            searchResults.push(...results);
+          } catch {
+            // continue if one keyword fails
+          }
+        }
 
-    const searchText = searchResults.length > 0
-      ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
-      : '未找到直接竞品（基于自身知识分析）';
+        const searchText = searchResults.length > 0
+          ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
+          : '未找到直接竞品（基于自身知识分析）';
 
-    // Step 3: Generate validation report
-    const reportResp = await chatCompletion([
-      {
-        role: 'system',
-        content:
-          '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-100 分。',
-      },
-      {
-        role: 'user',
-        content: `请分析以下产品方向的可行性，生成验证报告。
+        // Step 3: Generate validation report
+        controller.enqueue(progressEvent('generating', '正在生成评估报告...'));
+        const reportResp = await chatCompletion([
+          {
+            role: 'system',
+            content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-100 分。',
+          },
+          {
+            role: 'user',
+            content: `请分析以下产品方向的可行性，生成验证报告。
 
 产品想法：${idea}
 目标用户：${extracted.target_users || '待确定'}
@@ -133,27 +146,34 @@ ${searchText}
   "tech_assessment": "技术实现评估（需要的技术栈、最难的模块、有没有现成的开源方案可参考）",
   "mvp_timeline": "MVP 落地时间线建议（分几个阶段、每个阶段做什么、大概需要多久）"
 }`,
-      },
-    ], { temperature: 0.5 });
+          },
+        ], { temperature: 0.5 });
 
-    let report: ValidationReport;
-    try {
-      report = JSON.parse(reportResp);
-    } catch {
-      return Response.json(
-        { error: 'AI 分析结果异常，请稍后重试' },
-        { status: 500 }
-      );
-    }
+        let report: ValidationReport;
+        try {
+          report = JSON.parse(reportResp);
+        } catch {
+          controller.enqueue(errorEvent('AI 分析结果异常，请稍后重试'));
+          controller.close();
+          return;
+        }
 
-    report.has_search_data = searchResults.length > 0;
+        report.has_search_data = searchResults.length > 0;
 
-    return Response.json({ success: true, report });
-  } catch (error) {
-    console.error('Validation error:', error);
-    return Response.json(
-      { error: '验证过程出错了，请稍后重试' },
-      { status: 500 }
-    );
-  }
+        controller.enqueue(progressEvent('done', '分析完成'));
+        controller.enqueue(resultEvent(report));
+        controller.close();
+      } catch (error) {
+        console.error('Validation error:', error);
+        try {
+          controller.enqueue(errorEvent('验证过程出错了，请稍后重试'));
+        } catch { /* ignore if stream already closed */ }
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'application/x-ndjson' },
+  });
 }

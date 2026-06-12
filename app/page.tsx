@@ -36,6 +36,7 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [loadingStage, setLoadingStage] = useState('extracting');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -128,6 +129,7 @@ export default function Home() {
     setStatus('loading');
     setError('');
     setIdea(text);
+    setLoadingStage('extracting');
     const clientId = getClientId();
 
     try {
@@ -137,19 +139,50 @@ export default function Home() {
         body: JSON.stringify({ idea: text }),
       });
 
-      const data = await res.json();
+      if (res.status === 402) {
+        window.location.href = '/pricing';
+        return;
+      }
 
       if (!res.ok) {
-        if (res.status === 402) {
-          window.location.href = '/pricing';
-          return;
-        }
+        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || '验证失败');
       }
 
-      setReport(data.report);
-      setStatus('success');
-      saveToHistory(data.report);
+      // Read NDJSON stream
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('无法读取响应');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+            if (event.type === 'progress') {
+              setLoadingStage(event.stage);
+            } else if (event.type === 'result') {
+              setReport(event.report);
+              setStatus('success');
+              saveToHistory(event.report);
+            } else if (event.type === 'error') {
+              throw new Error(event.message);
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) continue;
+            throw e;
+          }
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络异常，请稍后重试');
       setStatus('error');
@@ -381,7 +414,7 @@ export default function Home() {
             </>
           )}
 
-          {status === 'loading' && <LoadingState />}
+          {status === 'loading' && <LoadingState stage={loadingStage} />}
 
           {status === 'success' && report && (
             <>

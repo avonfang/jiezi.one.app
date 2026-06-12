@@ -2,6 +2,61 @@
 
 import { useEffect, useState } from 'react';
 
+function AdminLogin({ onLogin }: { onLogin: () => void }) {
+  const [pw, setPw] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem('jiezi-admin-auth', '1');
+        onLogin();
+      } else {
+        setError('密码错误');
+      }
+    } catch {
+      setError('验证失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-white rounded-xl border border-gray-200 p-8 w-full max-w-sm">
+        <div className="text-center mb-6">
+          <h1 className="text-lg font-bold text-gray-900">管理后台</h1>
+          <p className="text-sm text-gray-500 mt-1">请输入密码</p>
+        </div>
+        <input
+          type="password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          placeholder="密码"
+          className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-3"
+        />
+        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+        <button
+          onClick={handleSubmit}
+          disabled={!pw || loading}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? '验证中...' : '进入后台'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface Order {
   id: string;
   userId: string;
@@ -31,6 +86,7 @@ const PLAN_NAMES: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  const [authed, setAuthed] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
   const [genPlan, setGenPlan] = useState('triple');
@@ -45,7 +101,12 @@ export default function AdminPage() {
     fetch('/api/codes/list').then(r => r.json()).then(d => setCodes(d.codes || []));
   };
 
-  useEffect(() => { loadOrders(); loadCodes(); }, []);
+  useEffect(() => {
+    if (sessionStorage.getItem('jiezi-admin-auth') === '1') {
+      setAuthed(true);
+      loadOrders(); loadCodes();
+    }
+  }, []);
 
   const handleConfirm = async (orderId: string) => {
     await fetch('/api/orders/confirm', {
@@ -68,6 +129,8 @@ export default function AdminPage() {
       loadCodes();
     }
   };
+
+  if (!authed) return <AdminLogin onLogin={() => setAuthed(true)} />;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
