@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { chatCompletion } from '@/lib/deepseek';
+import { chatCompletion, chatCompletionStream } from '@/lib/deepseek';
 import { search } from '@/lib/brave-search';
 import { useCredit, initCredits } from '@/lib/credits';
 import type { ValidationReport } from '@/lib/types';
@@ -8,6 +8,10 @@ const encoder = new TextEncoder();
 
 function progressEvent(stage: string, message: string) {
   return encoder.encode(JSON.stringify({ type: 'progress', stage, message }) + '\n');
+}
+
+function tokenEvent(text: string) {
+  return encoder.encode(JSON.stringify({ type: 'token', text }) + '\n');
 }
 
 function resultEvent(report: ValidationReport) {
@@ -85,9 +89,10 @@ export async function POST(request: NextRequest) {
           ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
           : '未找到直接竞品（基于自身知识分析）';
 
-        // Step 3: Generate validation report
+        // Step 3: Generate validation report (streaming)
         controller.enqueue(progressEvent('generating', '正在生成评估报告...'));
-        const reportResp = await chatCompletion([
+        let reportText = '';
+        for await (const token of chatCompletionStream([
           {
             role: 'system',
             content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-100 分。',
@@ -147,11 +152,14 @@ ${searchText}
   "mvp_timeline": "MVP 落地时间线建议（分几个阶段、每个阶段做什么、大概需要多久）"
 }`,
           },
-        ], { temperature: 0.5 });
+        ], { temperature: 0.5 })) {
+          reportText += token;
+          controller.enqueue(tokenEvent(token));
+        }
 
         let report: ValidationReport;
         try {
-          report = JSON.parse(reportResp);
+          report = JSON.parse(reportText);
         } catch {
           controller.enqueue(errorEvent('AI 分析结果异常，请稍后重试'));
           controller.close();

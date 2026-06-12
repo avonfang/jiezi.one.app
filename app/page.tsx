@@ -37,6 +37,7 @@ export default function Home() {
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [loadingStage, setLoadingStage] = useState('extracting');
+  const [streamTokens, setStreamTokens] = useState('');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function Home() {
     setError('');
     setIdea(text);
     setLoadingStage('extracting');
+    setStreamTokens('');
     const clientId = getClientId();
 
     try {
@@ -170,6 +172,8 @@ export default function Home() {
             const event = JSON.parse(line);
             if (event.type === 'progress') {
               setLoadingStage(event.stage);
+            } else if (event.type === 'token') {
+              setStreamTokens(prev => prev + event.text);
             } else if (event.type === 'result') {
               setReport(event.report);
               setStatus('success');
@@ -414,7 +418,7 @@ export default function Home() {
             </>
           )}
 
-          {status === 'loading' && <LoadingState stage={loadingStage} />}
+          {status === 'loading' && <LoadingState stage={loadingStage} tokens={streamTokens} />}
 
           {status === 'success' && report && (
             <>
