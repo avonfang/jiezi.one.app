@@ -19,7 +19,7 @@ export async function initCredits(userId: string): Promise<void> {
   await mkdir(CREDITS_DIR, { recursive: true });
   await writeFile(
     filePath(userId),
-    JSON.stringify({ balance: 1, total_purchased: 0, created_at: Date.now() }),
+    JSON.stringify({ balance: 3, total_purchased: 0, created_at: Date.now() }),
     'utf-8'
   );
 }
