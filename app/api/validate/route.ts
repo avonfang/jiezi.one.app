@@ -1,0 +1,159 @@
+import { NextRequest } from 'next/server';
+import { chatCompletion } from '@/lib/deepseek';
+import { search } from '@/lib/brave-search';
+import { useCredit, initCredits } from '@/lib/credits';
+import type { ValidationReport } from '@/lib/types';
+
+export async function POST(request: NextRequest) {
+  try {
+    const clientId = request.headers.get('x-client-id');
+    if (!clientId) {
+      return Response.json({ error: '缺少客户端标识' }, { status: 400 });
+    }
+
+    await initCredits(clientId);
+    const deducted = await useCredit(clientId);
+    if (!deducted) {
+      return Response.json({ error: '验证次数不足，请充值', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
+    }
+
+    const body = await request.json();
+    const idea = body?.idea?.trim();
+
+    if (!idea || typeof idea !== 'string' || idea.length < 4) {
+      return Response.json(
+        { error: '请输入至少 4 个字符描述你的产品想法' },
+        { status: 400 }
+      );
+    }
+
+    // Step 1: Extract structured info (including search keywords)
+    const extractResp = await chatCompletion([
+      {
+        role: 'system',
+        content:
+          '你是一个产品分析助手。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。',
+      },
+      {
+        role: 'user',
+        content: `从以下产品想法中提取结构化信息：
+
+产品想法：${idea}
+
+输出 JSON：
+{
+  "target_users": "目标用户描述",
+  "core_features": "核心功能描述",
+  "industry": "所属行业",
+  "keywords": ["搜索关键词1", "搜索关键词2", "搜索关键词3"]
+}`,
+      },
+    ], { temperature: 0.3 });
+
+    let extracted: { target_users: string; core_features: string; industry: string; keywords: string[] };
+    try {
+      extracted = JSON.parse(extractResp);
+    } catch {
+      extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
+    }
+
+    // Step 2: Search for competitors (with URLs for citation)
+    const searchResults: { name: string; snippet: string; url: string }[] = [];
+    for (const keyword of (extracted.keywords || []).slice(0, 3)) {
+      try {
+        const results = await search(keyword, 5);
+        searchResults.push(...results);
+      } catch {
+        // continue if one keyword fails
+      }
+    }
+
+    const searchText = searchResults.length > 0
+      ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
+      : '未找到直接竞品（基于自身知识分析）';
+
+    // Step 3: Generate validation report
+    const reportResp = await chatCompletion([
+      {
+        role: 'system',
+        content:
+          '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-100 分。',
+      },
+      {
+        role: 'user',
+        content: `请分析以下产品方向的可行性，生成验证报告。
+
+产品想法：${idea}
+目标用户：${extracted.target_users || '待确定'}
+核心功能：${extracted.core_features || '待确定'}
+所属行业：${extracted.industry || '待确定'}
+
+搜索结果（同类产品，含来源URL）：
+${searchText}
+
+要求：
+- market_score 给这个产品方向的市场前景打分（0-100）
+- feasibility_score 给你的开发可行性打分（0-100）
+- 竞品的 source_url 填写搜索来源中的真实URL
+- swot 每个维度至少2条
+- 所有评分和判断需基于搜索结果的真实信息，不要编造
+
+输出 JSON：
+{
+  "verdict": "推荐做" | "谨慎做" | "不建议做",
+  "verdict_reason": "判断理由（2-3句话）",
+  "market_score": 数值0-100,
+  "feasibility_score": 数值0-100,
+  "market_analysis": {
+    "competitor_count": "竞品数量评估",
+    "demand": "市场需求强度",
+    "competition_level": "竞争程度"
+  },
+  "competitors": [
+    {
+      "name": "竞品名称",
+      "positioning": "产品定位",
+      "user_feedback": "用户评价摘要",
+      "source_url": "搜索来源URL"
+    }
+  ],
+  "swot": {
+    "strengths": ["优势1", "优势2"],
+    "weaknesses": ["劣势1", "劣势2"],
+    "opportunities": ["机会1", "机会2"],
+    "threats": ["威胁1", "威胁2"]
+  },
+  "differentiation": "差异化空间分析",
+  "target_users": "建议优先关注的目标用户",
+  "pricing_suggestion": "建议定价区间和模式",
+  "acquisition_channels": "获客渠道建议（去哪里找第一批用户）",
+  "cost_budget": "开发成本估算（人力、时间、服务器、API等）",
+  "risk_warnings": ["风险1", "风险2", "风险3"],
+  "revenue_estimation": "收入预估分析（市场规模、潜在用户数、月收入预估范围、多久能回本）",
+  "tech_assessment": "技术实现评估（需要的技术栈、最难的模块、有没有现成的开源方案可参考）",
+  "mvp_timeline": "MVP 落地时间线建议（分几个阶段、每个阶段做什么、大概需要多久）"
+}`,
+      },
+    ], { temperature: 0.5 });
+
+    let report: ValidationReport;
+    try {
+      report = JSON.parse(reportResp);
+    } catch {
+      return Response.json(
+        { error: 'AI 分析结果异常，请稍后重试' },
+        { status: 500 }
+      );
+    }
+
+    report.has_search_data = searchResults.length > 0;
+
+    return Response.json({ success: true, report });
+  } catch (error) {
+    console.error('Validation error:', error);
+    return Response.json(
+      { error: '验证过程出错了，请稍后重试' },
+      { status: 500 }
+    );
+  }
+}
