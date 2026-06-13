@@ -80,7 +80,7 @@ export default function SharePageClient() {
         </div>
 
         {/* Verdict */}
-        <div className={`rounded-xl border-2 p-5 ${c.bg} mb-6`}>
+        <div className={`rounded-xl border-2 p-5 ${c.bg}`}>
           <div className="flex items-center gap-3">
             <span className="text-2xl">{icon}</span>
             <div>
@@ -89,6 +89,24 @@ export default function SharePageClient() {
             </div>
           </div>
         </div>
+
+        {/* Search evidence */}
+        {r.competitors && r.competitors.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4 mb-6">
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
+              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              AI 搜索发现 {r.competitors.length} 个相关产品
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {r.competitors.map((c, i) => (
+                <div key={i} className="flex-1 min-w-[160px] bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-gray-700">{c.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{c.positioning}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Scores */}
         {(r.market_score || r.feasibility_score) && (

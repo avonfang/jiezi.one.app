@@ -307,6 +307,27 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Search evidence */}
+                  {report.competitors && report.competitors.length > 0 && (
+                    <div className="px-5 py-3 border-b border-gray-50">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        AI 搜索发现 {report.competitors.length} 个相关产品
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {report.competitors.slice(0, 4).map((c, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-50 text-gray-500 rounded-md px-2 py-1">
+                            <span className="w-1 h-1 rounded-full bg-blue-300" />
+                            {c.name}
+                          </span>
+                        ))}
+                        {report.competitors.length > 4 && (
+                          <span className="text-xs text-gray-300 self-center">+{report.competitors.length - 4}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="px-5 py-4 space-y-2">
                     {report.swot.strengths.slice(0, 2).map((s, i) => (
                       <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -382,7 +403,14 @@ export default function Home() {
                       <span className="shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-xs">
                         💡
                       </span>
-                      <span className="text-sm text-gray-700 truncate group-hover:text-gray-900">{r.idea}</span>
+                      <div className="min-w-0">
+                        <span className="text-sm text-gray-700 truncate block group-hover:text-gray-900">{r.idea}</span>
+                        {r.report?.competitors?.length > 0 && (
+                          <span className="text-[10px] text-gray-300 mt-0.5 block">
+                            🔍 发现 {r.report.competitors.length} 个相关产品
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="shrink-0 flex items-center gap-3 ml-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
