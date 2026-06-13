@@ -387,21 +387,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 bg-gray-50/30">
-        <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-lg">🌱</span>
-            <span className="font-semibold text-gray-900">芥子</span>
+      {status === 'idle' && (
+        <footer className="border-t border-gray-100 bg-gray-50/30">
+          <div className="max-w-3xl mx-auto px-4 py-12 text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="text-lg">🌱</span>
+              <span className="font-semibold text-gray-900">芥子</span>
+            </div>
+            <div className="text-xs text-gray-400">
+              AI 产品想法验证器 · 用 AI 帮你判断哪些方向值得做
+            </div>
+            <div className="mt-6 pt-6 border-t border-gray-100 text-xs text-gray-300">
+              &copy; {new Date().getFullYear()} 芥子
+            </div>
           </div>
-          <div className="text-xs text-gray-400">
-            AI 产品想法验证器 · 用 AI 帮你判断哪些方向值得做
-          </div>
-          <div className="mt-6 pt-6 border-t border-gray-100 text-xs text-gray-300">
-            &copy; {new Date().getFullYear()} 芥子
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </main>
   );
 }
