@@ -171,16 +171,18 @@ export default function Home() {
       )}
 
       {/* Hero + 试试芥子 */}
-      <section className="bg-gradient-to-b from-blue-50/50 to-white relative overflow-hidden">
+      <section className="bg-gradient-to-b from-indigo-50/60 via-white to-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(99,102,241,0.06) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-indigo-100/20 rounded-full blur-3xl" />
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-100/30 rounded-full blur-3xl animate-[float_10s_ease-in-out_infinite]" />
+          <div className="absolute top-1/3 right-0 w-72 h-72 bg-blue-100/25 rounded-full blur-3xl animate-[float_8s_ease-in-out_infinite_reverse]" />
+          <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-indigo-100/20 rounded-full blur-3xl animate-[pulse-glow_6s_ease-in-out_infinite]" />
         </div>
         <div className="max-w-3xl mx-auto px-4 pt-16 sm:pt-20 pb-16 sm:pb-20 text-center relative animate-[fadeIn_0.6s_ease-out]">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-4">
             从想法
             <br />
-            <span className="text-blue-600">到产品方案，只需 1 分钟</span>
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">到产品方案，只需 1 分钟</span>
           </h1>
           <p className="text-gray-500 text-sm max-w-lg mx-auto mb-6 leading-relaxed">
             输入产品想法 → AI 自动验证市场方向、分析竞品、生成 PRD 和产品预览页
