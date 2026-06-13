@@ -1,18 +1,27 @@
 'use client';
 
-const STEPS = [
+const VALIDATION_STEPS = [
   { stage: 'extracting', label: '分析产品想法' },
   { stage: 'searching', label: '搜索市场竞品' },
   { stage: 'analyzing', label: '分析市场需求' },
   { stage: 'generating', label: '生成验证报告' },
 ];
 
-function getStepIndex(stage: string): number {
-  return STEPS.findIndex(s => s.stage === stage);
+function getStepIndex(steps: { stage: string }[], stage: string): number {
+  return steps.findIndex(s => s.stage === stage);
 }
 
-export default function LoadingState({ stage, message }: { stage?: string; message?: string }) {
-  const currentIdx = getStepIndex(stage || 'extracting');
+export default function LoadingState({
+  stage,
+  message,
+  steps,
+}: {
+  stage?: string;
+  message?: string;
+  steps?: { stage: string; label: string }[];
+}) {
+  const stepList = steps || VALIDATION_STEPS;
+  const currentIdx = getStepIndex(stepList, stage || stepList[0]?.stage || '');
 
   return (
     <div className="flex flex-col items-center py-16">
@@ -27,7 +36,7 @@ export default function LoadingState({ stage, message }: { stage?: string; messa
 
       {/* Step timeline */}
       <div className="space-y-3 text-sm">
-        {STEPS.map((step, idx) => {
+        {stepList.map((step, idx) => {
           const isDone = idx < currentIdx;
           const isCurrent = idx === currentIdx;
           const isPending = idx > currentIdx;

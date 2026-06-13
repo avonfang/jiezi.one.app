@@ -36,6 +36,8 @@ export default function AppPage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [loadingStage, setLoadingStage] = useState('extracting');
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [prdStage, setPrdStage] = useState('analyzing');
+  const [previewStage, setPreviewStage] = useState('designing');
   const [streamTokens, setStreamTokens] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [prdProgress, setPrdProgress] = useState('');
@@ -240,6 +242,7 @@ export default function AppPage() {
     if (!report) return;
     setPrdLoading(true);
     setPrdProgress('');
+    setPrdStage('analyzing');
 
     try {
       const res = await fetch('/api/generate-prd', {
@@ -272,6 +275,7 @@ export default function AppPage() {
           try {
             const event = JSON.parse(line);
             if (event.type === 'progress') {
+              setPrdStage(event.stage || 'analyzing');
               setPrdProgress(event.message);
             } else if (event.type === 'result') {
               setPrd(event.prd);
@@ -303,6 +307,7 @@ export default function AppPage() {
     if (!prd) return;
     setPreviewLoading(true);
     setPreviewProgress('');
+    setPreviewStage('designing');
 
     try {
       const res = await fetch('/api/generate-preview', {
@@ -335,6 +340,7 @@ export default function AppPage() {
           try {
             const event = JSON.parse(line);
             if (event.type === 'progress') {
+              setPreviewStage(event.stage || 'designing');
               setPreviewProgress(event.message);
             } else if (event.type === 'result') {
               setPreview(event.preview);
@@ -389,7 +395,7 @@ export default function AppPage() {
   // PRD view
   if (prd) {
     return (
-      <SimpleLayout loading={previewLoading} progress={previewProgress}>
+      <SimpleLayout loading={previewLoading} progress={previewProgress} stage={previewStage}>
         <PRDView
           prd={prd}
           onBack={handleBackToReport}
@@ -550,31 +556,43 @@ export default function AppPage() {
       </footer>
 
       {/* Loading overlay for PRD / Preview generation */}
-      {(prdLoading || previewLoading) && (
+      {prdLoading && (
         <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center max-w-sm text-center">
-            <div className="relative w-14 h-14 mb-6">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" style={{ animationDuration: '0.8s' }} />
-            </div>
-            <p className="text-base font-medium text-gray-700">
-              {prdLoading && (prdProgress || 'AI 正在生成 PRD...')}
-              {previewLoading && (previewProgress || 'AI 正在生成预览页...')}
-            </p>
-            {(prdProgress || previewProgress) && (
-              <p className="text-sm text-gray-400 mt-2">{prdProgress || previewProgress}</p>
-            )}
+          <div className="flex flex-col items-center">
+            <LoadingState
+              stage={prdStage}
+              message={prdProgress}
+              steps={[
+                { stage: 'analyzing', label: '分析验证报告' },
+                { stage: 'writing', label: '生成 PRD 文档' },
+              ]}
+            />
             {stalled && (
-              <p className="text-xs text-amber-500 mt-3 animate-pulse flex items-center gap-1.5">
+              <p className="text-xs text-amber-500 animate-pulse flex items-center gap-1.5 mt-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                {prdLoading ? 'AI 正在深入思考，请耐心等待...' : 'AI 正在精心设计页面...'}
+                AI 正在深入思考，请耐心等待...
               </p>
             )}
-            <div className="flex gap-1 mt-5">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0s' }} />
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0.15s' }} />
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0.3s' }} />
-            </div>
+          </div>
+        </div>
+      )}
+      {previewLoading && (
+        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <LoadingState
+              stage={previewStage}
+              message={previewProgress}
+              steps={[
+                { stage: 'designing', label: '设计页面布局' },
+                { stage: 'writing', label: '生成预览页面' },
+              ]}
+            />
+            {stalled && (
+              <p className="text-xs text-amber-500 animate-pulse flex items-center gap-1.5 mt-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                AI 正在精心设计页面...
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -582,7 +600,7 @@ export default function AppPage() {
   );
 }
 
-function SimpleLayout({ children, loading, progress }: { children: React.ReactNode; loading?: boolean; progress?: string }) {
+function SimpleLayout({ children, loading, progress, stage }: { children: React.ReactNode; loading?: boolean; progress?: string; stage?: string }) {
   const [showAuth, setShowAuth] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [stalled, setStalled] = useState(false);
@@ -637,24 +655,21 @@ function SimpleLayout({ children, loading, progress }: { children: React.ReactNo
       </div>
       {loading && (
         <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center max-w-sm text-center">
-            <div className="relative w-14 h-14 mb-6">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" style={{ animationDuration: '0.8s' }} />
-            </div>
-            <p className="text-base font-medium text-gray-700">{progress || 'AI 正在生成预览页...'}</p>
-            {progress && <p className="text-sm text-gray-400 mt-2">{progress}</p>}
+          <div className="flex flex-col items-center">
+            <LoadingState
+              stage={stage || 'designing'}
+              message={progress || ''}
+              steps={[
+                { stage: 'designing', label: '设计页面布局' },
+                { stage: 'writing', label: '生成预览页面' },
+              ]}
+            />
             {stalled && (
-              <p className="text-xs text-amber-500 mt-3 animate-pulse flex items-center gap-1.5">
+              <p className="text-xs text-amber-500 animate-pulse flex items-center gap-1.5 mt-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 AI 正在精心设计页面...
               </p>
             )}
-            <div className="flex gap-1 mt-5">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0s' }} />
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0.15s' }} />
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0.3s' }} />
-            </div>
           </div>
         </div>
       )}
