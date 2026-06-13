@@ -39,6 +39,7 @@ export default function Home() {
   const [report, setReport] = useState<ValidationReport | null>(null);
   const [error, setError] = useState('');
   const [loadingStage, setLoadingStage] = useState('extracting');
+  const [recentRecords, setRecentRecords] = useState<{ id: string; idea: string; verdict: string; market_score: number; feasibility_score: number; target_users: string; report: ValidationReport; created_at: number }[]>([]);
 
   useEffect(() => {
     setUserName(getUsername());
@@ -50,6 +51,10 @@ export default function Home() {
       .then(html => {
         if (html && html.length > 200) setDemoHtml(html);
       })
+      .catch(() => {});
+    fetch('/api/recent-validations?limit=6')
+      .then(res => res.json())
+      .then(data => setRecentRecords(data.records || []))
       .catch(() => {});
   }, []);
 
@@ -133,6 +138,11 @@ export default function Home() {
     if (report && lastIdea) {
       localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: lastIdea, report }));
     }
+    router.push('/app');
+  };
+
+  const handleViewRecent = (record: { idea: string; report: ValidationReport }) => {
+    localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: record.idea, report: record.report }));
     router.push('/app');
   };
 
@@ -338,6 +348,40 @@ export default function Home() {
                 style={{ height: '380px' }}
                 sandbox="allow-scripts"
               />
+            </div>
+          )}
+
+          {/* Recent validations — shown only when idle */}
+          {status === 'idle' && recentRecords.length > 0 && (
+            <div className="max-w-3xl mx-auto mt-16 text-left">
+              <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                大家最近在验证的想法
+              </h3>
+              <div className="space-y-2">
+                {recentRecords.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleViewRecent(r)}
+                    className="w-full flex items-center justify-between bg-white border border-gray-100 hover:border-indigo-200 hover:shadow-sm rounded-xl px-4 py-3 transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-xs">
+                        💡
+                      </span>
+                      <span className="text-sm text-gray-700 truncate group-hover:text-gray-900">{r.idea}</span>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-3 ml-3">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        r.verdict === '推荐做' ? 'bg-green-50 text-green-600' :
+                        r.verdict === '谨慎做' ? 'bg-yellow-50 text-yellow-600' :
+                        'bg-red-50 text-red-600'
+                      }`}>{r.verdict}</span>
+                      <svg className="w-4 h-4 text-gray-300 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

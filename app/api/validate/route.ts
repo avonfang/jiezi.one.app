@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { chatCompletion, chatCompletionStream } from '@/lib/deepseek';
 import { search } from '@/lib/brave-search';
 import { useCredit, initCredits } from '@/lib/credits';
+import { saveValidation } from '@/lib/recent-validations';
 import type { ValidationReport } from '@/lib/types';
 
 const encoder = new TextEncoder();
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
   await initCredits(clientId);
   const deducted = await useCredit(clientId);
   if (!deducted) {
-    return Response.json({ error: '验证次数不足，请充值', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
+    return Response.json({ error: '积分不足，请充值', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
   }
 
   const body = await request.json();
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
         for await (const token of chatCompletionStream([
           {
             role: 'system',
-            content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-100 分。',
+            content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-10 分，支持1位小数。',
           },
           {
             role: 'user',
@@ -120,8 +121,8 @@ ${searchText}
 {
   "verdict": "推荐做" | "谨慎做" | "不建议做",
   "verdict_reason": "判断理由（2-3句话）",
-  "market_score": 数值0-100,
-  "feasibility_score": 数值0-100,
+  "market_score": 数值0-10,
+  "feasibility_score": 数值0-10,
   "market_analysis": {
     "competitor_count": "竞品数量评估",
     "demand": "市场需求强度",
@@ -167,6 +168,9 @@ ${searchText}
         }
 
         report.has_search_data = searchResults.length > 0;
+
+        // Save to recent validations (fire-and-forget)
+        saveValidation(idea, report).catch(() => {});
 
         controller.enqueue(progressEvent('done', '分析完成'));
         controller.enqueue(resultEvent(report));
