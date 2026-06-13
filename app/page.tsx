@@ -347,19 +347,24 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 flex gap-3">
-                    <button
-                      onClick={handleReset}
-                      className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                    >
-                      重新开始
-                    </button>
-                    <button
-                      onClick={handleGoToApp}
-                      className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                    >
-                      查看完整报告 →
-                    </button>
+                  <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleReset}
+                        className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                      >
+                        重新开始
+                      </button>
+                      <button
+                        onClick={handleGoToApp}
+                        className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                      >
+                        查看完整报告 →
+                      </button>
+                    </div>
+                    <p className="text-center text-[10px] text-gray-300 mt-2 leading-relaxed">
+                      查看完整报告 · SWOT / PRD / 产品预览页
+                    </p>
                   </div>
                 </div>
               </div>
