@@ -74,13 +74,17 @@ export async function POST(request: NextRequest) {
           extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
         }
 
+        controller.enqueue(progressEvent('extracting', extracted.target_users ? `目标用户：${extracted.target_users.substring(0, 30)}` : ''));
+
         // Step 2: Search for competitors
-        controller.enqueue(progressEvent('searching', '正在搜索竞品...'));
         const searchResults: { name: string; snippet: string; url: string }[] = [];
-        for (const keyword of (extracted.keywords || []).slice(0, 3)) {
+        const keywords = (extracted.keywords || []).slice(0, 3);
+        for (let i = 0; i < keywords.length; i++) {
+          controller.enqueue(progressEvent('searching', `搜索第 ${i + 1}/${keywords.length} 组关键词`));
           try {
-            const results = await search(keyword, 5);
+            const results = await search(keywords[i], 5);
             searchResults.push(...results);
+            controller.enqueue(progressEvent('searching', `发现 ${searchResults.length} 个相关结果`));
           } catch {
             // continue if one keyword fails
           }
@@ -90,8 +94,11 @@ export async function POST(request: NextRequest) {
           ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
           : '未找到直接竞品（基于自身知识分析）';
 
-        // Step 3: Generate validation report (streaming)
-        controller.enqueue(progressEvent('generating', '正在生成评估报告...'));
+        // Step 3: Analyze search data
+        controller.enqueue(progressEvent('analyzing', `搜索到 ${searchResults.length} 个竞品，正在分析数据`));
+
+        // Step 4: Generate validation report (streaming)
+        controller.enqueue(progressEvent('generating', 'AI 正在撰写报告...'));
         let reportText = '';
         for await (const token of chatCompletionStream([
           {

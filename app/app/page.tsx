@@ -35,6 +35,7 @@ export default function AppPage() {
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [loadingStage, setLoadingStage] = useState('extracting');
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [streamTokens, setStreamTokens] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [prdProgress, setPrdProgress] = useState('');
@@ -204,6 +205,7 @@ export default function AppPage() {
             const event = JSON.parse(line);
             if (event.type === 'progress') {
               setLoadingStage(event.stage);
+              setLoadingMessage(event.message || '');
             } else if (event.type === 'token') {
               setStreamTokens(prev => prev + event.text);
             } else if (event.type === 'result') {
@@ -462,7 +464,7 @@ export default function AppPage() {
             </>
           )}
 
-          {status === 'loading' && <LoadingState stage={loadingStage} />}
+          {status === 'loading' && <LoadingState stage={loadingStage} message={loadingMessage} />}
 
           {status === 'success' && report && (
             <>

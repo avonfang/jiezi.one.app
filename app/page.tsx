@@ -39,6 +39,7 @@ export default function Home() {
   const [report, setReport] = useState<ValidationReport | null>(null);
   const [error, setError] = useState('');
   const [loadingStage, setLoadingStage] = useState('extracting');
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [recentRecords, setRecentRecords] = useState<{ id: string; idea: string; verdict: string; market_score: number; feasibility_score: number; target_users: string; report: ValidationReport; created_at: number }[]>([]);
 
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function Home() {
             const event = JSON.parse(line);
             if (event.type === 'progress') {
               setLoadingStage(event.stage);
+              setLoadingMessage(event.message || '');
             } else if (event.type === 'result') {
               setReport(event.report);
               setStatus('success');
@@ -242,7 +244,7 @@ export default function Home() {
             )}
 
             {/* Loading */}
-            {status === 'loading' && <LoadingState stage={loadingStage} />}
+            {status === 'loading' && <LoadingState stage={loadingStage} message={loadingMessage} />}
 
             {/* Error */}
             {status === 'error' && (

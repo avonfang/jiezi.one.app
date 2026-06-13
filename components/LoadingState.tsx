@@ -1,51 +1,73 @@
 'use client';
 
-const STAGE_INFO: Record<string, { label: string; estimate: string }> = {
-  extracting: { label: '正在分析产品信息...', estimate: '约 5 秒' },
-  searching: { label: '正在搜索竞品...', estimate: '约 5-10 秒' },
-  generating: { label: 'AI 正在生成评估报告...', estimate: '约 10-15 秒' },
-  done: { label: '分析完成', estimate: '' },
-};
+const STEPS = [
+  { stage: 'extracting', label: '分析产品想法' },
+  { stage: 'searching', label: '搜索市场竞品' },
+  { stage: 'analyzing', label: '分析市场需求' },
+  { stage: 'generating', label: '生成验证报告' },
+];
 
-export default function LoadingState({ stage, tokens }: { stage?: string; tokens?: string }) {
-  const info = STAGE_INFO[stage || 'extracting'] || STAGE_INFO.extracting;
+function getStepIndex(stage: string): number {
+  return STEPS.findIndex(s => s.stage === stage);
+}
+
+export default function LoadingState({ stage, message }: { stage?: string; message?: string }) {
+  const currentIdx = getStepIndex(stage || 'extracting');
 
   return (
-    <div className="flex flex-col items-center justify-center py-16">
+    <div className="flex flex-col items-center py-16">
       {/* Spinner */}
-      <div className="relative w-16 h-16 mb-8">
-        <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
+      <div className="relative w-14 h-14 mb-10">
+        <div className="absolute inset-0 rounded-full border-3 border-indigo-100" />
         <div
-          className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin"
+          className="absolute inset-0 rounded-full border-3 border-transparent border-t-indigo-500 animate-spin"
           style={{ animationDuration: '0.8s' }}
         />
       </div>
 
-      {/* Current stage */}
-      <p className="text-base font-medium text-gray-700">
-        {info.label}
-      </p>
-      <p className="text-sm text-gray-400 mt-1">
-        {info.estimate}
-      </p>
+      {/* Step timeline */}
+      <div className="space-y-3 text-sm">
+        {STEPS.map((step, idx) => {
+          const isDone = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          const isPending = idx > currentIdx;
 
-      {/* Live token preview during generation */}
-      {stage === 'generating' && tokens && (
-        <div className="mt-6 w-full max-w-lg">
-          <div className="bg-gray-900 rounded-xl p-4 overflow-hidden">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="w-2 h-2 rounded-full bg-yellow-400" />
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              <span className="ml-2 text-[10px] text-gray-500">AI 实时输出</span>
+          return (
+            <div key={step.stage} className="flex items-center gap-3">
+              {/* Status indicator */}
+              <div className="shrink-0 w-5 h-5 flex items-center justify-center">
+                {isDone ? (
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : isCurrent ? (
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                  </div>
+                ) : (
+                  <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
+                )}
+              </div>
+
+              {/* Label */}
+              <span className={`transition-colors ${
+                isDone ? 'text-gray-400' :
+                isCurrent ? 'text-gray-900 font-medium' :
+                'text-gray-300'
+              }`}>
+                {step.label}
+              </span>
+
+              {/* Extra info for current step */}
+              {isCurrent && message && (
+                <span className="text-xs text-indigo-500 ml-1 animate-[fadeIn_0.3s_ease-out]">{message}</span>
+              )}
             </div>
-            <pre className="text-xs text-green-400 font-mono leading-relaxed whitespace-pre-wrap break-all max-h-32 overflow-y-auto scroll-smooth">
-              {tokens}
-              <span className="inline-block w-2 h-4 bg-green-400 animate-pulse ml-0.5" />
-            </pre>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
