@@ -17,10 +17,18 @@ const SAMPLE_IDEAS = [
 ];
 
 const verdictStyles: Record<string, string> = {
+  '建议尝试': 'bg-green-100 text-green-700',
   '推荐做': 'bg-green-100 text-green-700',
+  '值得探索': 'bg-yellow-100 text-yellow-700',
   '谨慎做': 'bg-yellow-100 text-yellow-700',
+  '暂不建议': 'bg-red-100 text-red-700',
   '不建议做': 'bg-red-100 text-red-700',
 };
+
+function starRating(avg: number): string {
+  const full = Math.round(avg / 2);
+  return '★'.repeat(Math.min(full, 5)) + '☆'.repeat(Math.max(5 - full, 0));
+}
 
 function scoreColor(score: number) {
   if (score >= 8) return 'text-green-600';
@@ -269,9 +277,12 @@ export default function Home() {
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                   <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${verdictStyles[report.verdict] || ''}`}>
                         {report.verdict}
+                      </span>
+                      <span className="text-sm text-amber-500 tracking-wider">
+                        {starRating((report.market_score + report.feasibility_score) / 2)}
                       </span>
                       <span className="text-xs text-gray-400">{report.verdict_reason}</span>
                     </div>
@@ -375,8 +386,8 @@ export default function Home() {
                     </div>
                     <div className="shrink-0 flex items-center gap-3 ml-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        r.verdict === '推荐做' ? 'bg-green-50 text-green-600' :
-                        r.verdict === '谨慎做' ? 'bg-yellow-50 text-yellow-600' :
+                        r.verdict === '建议尝试' || r.verdict === '推荐做' ? 'bg-green-50 text-green-600' :
+                        r.verdict === '值得探索' || r.verdict === '谨慎做' ? 'bg-yellow-50 text-yellow-600' :
                         'bg-red-50 text-red-600'
                       }`}>{r.verdict}</span>
                       <svg className="w-4 h-4 text-gray-300 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>

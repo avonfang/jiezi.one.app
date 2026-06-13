@@ -126,7 +126,7 @@ ${searchText}
 
 输出 JSON：
 {
-  "verdict": "推荐做" | "谨慎做" | "不建议做",
+  "verdict": "建议尝试" | "值得探索" | "暂不建议",
   "verdict_reason": "判断理由（2-3句话）",
   "market_score": 数值0-10,
   "feasibility_score": 数值0-10,

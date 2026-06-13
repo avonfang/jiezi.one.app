@@ -23,7 +23,7 @@ export interface SWOT {
 }
 
 export interface ValidationReport {
-  verdict: '推荐做' | '谨慎做' | '不建议做';
+  verdict: '建议尝试' | '值得探索' | '暂不建议' | '推荐做' | '谨慎做' | '不建议做';
   verdict_reason: string;
   market_score: number;
   feasibility_score: number;

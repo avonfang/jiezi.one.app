@@ -15,19 +15,30 @@ interface ReportViewProps {
 }
 
 const VERDICT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  '推荐做': { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: '推荐做' },
-  '谨慎做': { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: '谨慎做' },
-  '不建议做': { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: '不建议做' },
+  '建议尝试': { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: '建议尝试' },
+  '推荐做': { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: '建议尝试' },
+  '值得探索': { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: '值得探索' },
+  '谨慎做': { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: '值得探索' },
+  '暂不建议': { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: '暂不建议' },
+  '不建议做': { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: '暂不建议' },
 };
 
 const VERDICT_ICONS: Record<string, string> = {
+  '建议尝试': '🟢',
   '推荐做': '🟢',
+  '值得探索': '🟡',
   '谨慎做': '🟡',
+  '暂不建议': '🔴',
   '不建议做': '🔴',
 };
 
+function starRating(avg: number): string {
+  const full = Math.round(avg / 2);
+  return '★'.repeat(Math.min(full, 5)) + '☆'.repeat(Math.max(5 - full, 0));
+}
+
 export default function ReportView({ report, onReset, onGeneratePrd, prdLoading, onPmConsult, pmConsultOpen, onShare, sharing }: ReportViewProps) {
-  const verdictStyle = VERDICT_STYLES[report.verdict] || VERDICT_STYLES['谨慎做'];
+  const verdictStyle = VERDICT_STYLES[report.verdict] || VERDICT_STYLES['值得探索'];
   const verdictIcon = VERDICT_ICONS[report.verdict] || '🟡';
 
   const handleDownloadMarkdown = () => {
@@ -37,8 +48,8 @@ export default function ReportView({ report, onReset, onGeneratePrd, prdLoading,
 ${report.verdict} — ${report.verdict_reason}
 
 ## 量化评分
-- 市场前景：${report.market_score}/100
-- 开发可行性：${report.feasibility_score}/100
+- 市场前景：${report.market_score}/10
+- 开发可行性：${report.feasibility_score}/10
 
 ## 市场分析
 - 竞品数量：${report.market_analysis.competitor_count}
@@ -110,13 +121,13 @@ ${report.risk_warnings.map(w => `- ⚠ ${w}`).join('\n')}
   const handleDownloadPdf = () => {
     const sectionsHtml = `
 <h2 style="color:#16a34a;margin:0 0 8px 0;font-size:18px;">综合判断</h2>
-<p style="font-size:16px;font-weight:600;color:${report.verdict === '推荐做' ? '#16a34a' : report.verdict === '谨慎做' ? '#ca8a04' : '#dc2626'}">${report.verdict}</p>
+<p style="font-size:16px;font-weight:600;color:${['建议尝试','推荐做'].includes(report.verdict) ? '#16a34a' : ['值得探索','谨慎做'].includes(report.verdict) ? '#ca8a04' : '#dc2626'}">${report.verdict}</p>
 <p style="color:#555;line-height:1.6;margin:4px 0 20px 0;">${report.verdict_reason}</p>
 
 <h2 style="color:#16a34a;margin:20px 0 8px 0;font-size:18px;">量化评分</h2>
 <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-<tr><td style="padding:8px 12px;background:#f0fdf4;border:1px solid #dcfce7;font-weight:500;">市场前景</td><td style="padding:8px 12px;background:#f0fdf4;border:1px solid #dcfce7;">${report.market_score}/100</td></tr>
-<tr><td style="padding:8px 12px;background:#fefce8;border:1px solid #fef9c3;font-weight:500;">开发可行性</td><td style="padding:8px 12px;background:#fefce8;border:1px solid #fef9c3;">${report.feasibility_score}/100</td></tr>
+<tr><td style="padding:8px 12px;background:#f0fdf4;border:1px solid #dcfce7;font-weight:500;">市场前景</td><td style="padding:8px 12px;background:#f0fdf4;border:1px solid #dcfce7;">${report.market_score}/10</td></tr>
+<tr><td style="padding:8px 12px;background:#fefce8;border:1px solid #fef9c3;font-weight:500;">开发可行性</td><td style="padding:8px 12px;background:#fefce8;border:1px solid #fef9c3;">${report.feasibility_score}/10</td></tr>
 </table>
 
 <h2 style="color:#16a34a;margin:20px 0 8px 0;font-size:18px;">市场分析</h2>
@@ -169,7 +180,7 @@ h1{font-size:24px;color:#111;margin:0 0 4px 0;}h1 small{font-size:13px;color:#99
 @media print{body{max-width:none;margin:20px;}h2{break-after:avoid;}table,div{break-inside:avoid;}}
 </style></head><body>
 <h1>产品验证报告 <small>${new Date().toLocaleDateString('zh-CN')}</small></h1>
-<div class="verdict" style="background:${report.verdict === '推荐做' ? '#dcfce7' : report.verdict === '谨慎做' ? '#fef9c3' : '#fee2e2'};color:${report.verdict === '推荐做' ? '#16a34a' : report.verdict === '谨慎做' ? '#a16207' : '#dc2626'}">${report.verdict}</div>
+<div class="verdict" style="background:${['建议尝试','推荐做'].includes(report.verdict) ? '#dcfce7' : ['值得探索','谨慎做'].includes(report.verdict) ? '#fef9c3' : '#fee2e2'};color:${['建议尝试','推荐做'].includes(report.verdict) ? '#16a34a' : ['值得探索','谨慎做'].includes(report.verdict) ? '#a16207' : '#dc2626'}">${report.verdict}</div>
 ${sectionsHtml}
 <div class="footer">由芥子 AI 生成 · ${report.has_search_data ? '部分数据基于 Brave Search 实时搜索结果 · ' : ''}所有分析仅供参考</div>
 <script>window.print()</script>
@@ -189,7 +200,12 @@ ${sectionsHtml}
         <div className="flex items-center gap-3">
           <span className="text-2xl">{verdictIcon}</span>
           <div>
-            <p className="text-xl font-bold">{report.verdict}</p>
+            <div className="flex items-center gap-3">
+              <p className="text-xl font-bold">{verdictStyle.label}</p>
+              <span className="text-lg text-amber-500 tracking-wider">
+                {starRating((report.market_score + report.feasibility_score) / 2)}
+              </span>
+            </div>
             <p className="text-sm mt-1 opacity-80">{report.verdict_reason}</p>
           </div>
         </div>
@@ -444,8 +460,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function ScoreGauge({ label, score }: { label: string; score: number }) {
-  const color = score >= 70 ? 'bg-green-500' : score >= 45 ? 'bg-yellow-500' : 'bg-red-500';
-  const bgColor = score >= 70 ? 'bg-green-100' : score >= 45 ? 'bg-yellow-100' : 'bg-red-100';
+  const color = score >= 7 ? 'bg-green-500' : score >= 4.5 ? 'bg-yellow-500' : 'bg-red-500';
+  const bgColor = score >= 7 ? 'bg-green-100' : score >= 4.5 ? 'bg-yellow-100' : 'bg-red-100';
 
   return (
     <div className={`${bgColor} rounded-lg p-4`}>
@@ -456,7 +472,7 @@ function ScoreGauge({ label, score }: { label: string; score: number }) {
       <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden">
         <div
           className={`h-full ${color} rounded-full transition-all`}
-          style={{ width: `${score}%` }}
+          style={{ width: `${score * 10}%` }}
         />
       </div>
     </div>

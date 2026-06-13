@@ -5,14 +5,20 @@ import { useEffect, useState } from 'react';
 import type { ShareData } from '@/lib/types';
 
 const VERDICT_COLORS: Record<string, { bg: string; text: string }> = {
+  '建议尝试': { bg: 'bg-green-50', text: 'text-green-700' },
   '推荐做': { bg: 'bg-green-50', text: 'text-green-700' },
+  '值得探索': { bg: 'bg-yellow-50', text: 'text-yellow-700' },
   '谨慎做': { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+  '暂不建议': { bg: 'bg-red-50', text: 'text-red-700' },
   '不建议做': { bg: 'bg-red-50', text: 'text-red-700' },
 };
 
 const VERDICT_ICONS: Record<string, string> = {
+  '建议尝试': '🟢',
   '推荐做': '🟢',
+  '值得探索': '🟡',
   '谨慎做': '🟡',
+  '暂不建议': '🔴',
   '不建议做': '🔴',
 };
 
@@ -55,7 +61,7 @@ export default function SharePageClient() {
   }
 
   const r = data.report;
-  const c = VERDICT_COLORS[r.verdict] || VERDICT_COLORS['谨慎做'];
+  const c = VERDICT_COLORS[r.verdict] || VERDICT_COLORS['值得探索'];
   const icon = VERDICT_ICONS[r.verdict] || '🟡';
 
   return (
@@ -63,10 +69,13 @@ export default function SharePageClient() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 mb-6">
+          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors">
             <span>🌱</span> 芥子
           </a>
-          <p className="text-xs text-gray-400 mb-1">分享的验证报告</p>
+          <p className="text-xs text-gray-300 mt-2 italic">
+            「芥子纳须弥」—— 一粒芥子容纳整座须弥山，一个小想法也能长成一个伟大的作品
+          </p>
+          <p className="text-xs text-gray-400 mt-6 mb-1">分享的验证报告</p>
           <p className="text-lg text-gray-700 leading-relaxed">{data.idea}</p>
         </div>
 
@@ -169,9 +178,10 @@ export default function SharePageClient() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-4">
-          由芥子 AI 生成 · 所有分析仅供参考
-        </p>
+        <div className="text-center text-xs text-gray-300 mt-6 pt-4 border-t border-gray-100">
+          <p>芥子 · 「芥子纳须弥」—— 一粒芥子容纳整座须弥山</p>
+          <p className="mt-1">由 AI 生成 · 所有分析仅供参考</p>
+        </div>
       </div>
     </div>
   );
@@ -196,8 +206,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function ScoreBox({ label, score }: { label: string; score: number }) {
-  const color = score >= 70 ? 'bg-green-500' : score >= 45 ? 'bg-yellow-500' : 'bg-red-500';
-  const bgColor = score >= 70 ? 'bg-green-50' : score >= 45 ? 'bg-yellow-50' : 'bg-red-50';
+  const color = score >= 7 ? 'bg-green-500' : score >= 4.5 ? 'bg-yellow-500' : 'bg-red-500';
+  const bgColor = score >= 7 ? 'bg-green-50' : score >= 4.5 ? 'bg-yellow-50' : 'bg-red-50';
   return (
     <div className={`${bgColor} rounded-lg p-4`}>
       <div className="flex items-center justify-between mb-2">
@@ -205,7 +215,7 @@ function ScoreBox({ label, score }: { label: string; score: number }) {
         <span className="text-2xl font-bold text-gray-800">{score}</span>
       </div>
       <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${score}%` }} />
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${score * 10}%` }} />
       </div>
     </div>
   );

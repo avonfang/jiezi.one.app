@@ -9,8 +9,11 @@ interface HistoryPanelProps {
 }
 
 const VERDICT_ICONS: Record<string, string> = {
+  '建议尝试': '🟢',
   '推荐做': '🟢',
+  '值得探索': '🟡',
   '谨慎做': '🟡',
+  '暂不建议': '🔴',
   '不建议做': '🔴',
 };
 
