@@ -207,6 +207,12 @@ ${sectionsHtml}
               </span>
             </div>
             <p className="text-sm mt-1 opacity-80">{report.verdict_reason}</p>
+            {report.sharp_comment && (
+              <div className="flex items-start gap-2 mt-3 text-sm">
+                <span className="text-amber-400 shrink-0">💬</span>
+                <span className="italic opacity-80">{report.sharp_comment}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

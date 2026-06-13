@@ -288,6 +288,16 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Sharp comment */}
+                  {report.sharp_comment && (
+                    <div className="px-5 py-3 border-b border-gray-50">
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-amber-400 shrink-0 mt-0.5">💬</span>
+                        <span className="text-gray-500 italic leading-relaxed">{report.sharp_comment}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="px-5 py-3 border-b border-gray-50 flex gap-6 text-sm">
                     <div>
                       <span className="text-gray-400">市场</span>{' '}

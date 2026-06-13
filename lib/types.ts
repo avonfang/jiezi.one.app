@@ -27,6 +27,7 @@ export interface ValidationReport {
   verdict_reason: string;
   market_score: number;
   feasibility_score: number;
+  sharp_comment?: string;
   market_analysis: MarketAnalysis;
   competitors: Competitor[];
   swot: SWOT;

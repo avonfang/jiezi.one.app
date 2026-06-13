@@ -128,6 +128,7 @@ ${searchText}
 {
   "verdict": "建议尝试" | "值得探索" | "暂不建议",
   "verdict_reason": "判断理由（2-3句话）",
+  "sharp_comment": "一句毒舌评价，点出这个想法最致命的弱点或最值得警惕的风险，语气犀利但不刻薄，20-40字",
   "market_score": 数值0-10,
   "feasibility_score": 数值0-10,
   "market_analysis": {

@@ -86,6 +86,12 @@ export default function SharePageClient() {
             <div>
               <p className={`text-xl font-bold ${c.text}`}>{r.verdict}</p>
               <p className="text-sm mt-1 text-gray-600">{r.verdict_reason}</p>
+              {r.sharp_comment && (
+                <div className="flex items-start gap-2 mt-3 text-sm">
+                  <span className="text-amber-400 shrink-0">💬</span>
+                  <span className="italic text-gray-500">{r.sharp_comment}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
