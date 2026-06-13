@@ -48,6 +48,8 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loadingStage, setLoadingStage] = useState('extracting');
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [recentRecords, setRecentRecords] = useState<{ id: string; idea: string; verdict: string; market_score: number; feasibility_score: number; target_users: string; report: ValidationReport; created_at: number }[]>([]);
 
   useEffect(() => {
@@ -134,6 +136,28 @@ export default function Home() {
         setError(msg || '分析过程出现异常，请稍后重试');
       }
       setStatus('error');
+    }
+  };
+
+  const handleShare = async () => {
+    if (!report || !lastIdea) return;
+    setSharing(true);
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idea: lastIdea, report }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      const url = `${window.location.origin}/share/${data.id}`;
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 3000);
+    } catch {
+      // fallback
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -360,6 +384,13 @@ export default function Home() {
                   <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100">
                     <div className="flex gap-3">
                       <button
+                        onClick={handleShare}
+                        disabled={sharing}
+                        className="flex-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 transition-colors"
+                      >
+                        {sharing ? '生成中...' : '分享'}
+                      </button>
+                      <button
                         onClick={handleReset}
                         className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                       >
@@ -377,6 +408,13 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Share toast */}
+            {shareCopied && (
+              <div className="mt-4 text-center text-sm text-green-600 animate-[fadeIn_0.3s_ease-out]">
+                链接已复制，可以分享给朋友了 ✨
               </div>
             )}
           </div>
