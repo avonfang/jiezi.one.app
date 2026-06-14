@@ -86,19 +86,28 @@ interface FeedbackItem {
   created_at: number;
 }
 
+interface RegisteredUser {
+  email: string;
+  userId: string;
+  name: string;
+  createdAt: number;
+}
+
 const PLAN_NAMES: Record<string, string> = {
   single: '1 积分',
   triple: '3 积分',
   ten: '10 积分',
 };
 
-type Tab = 'codes' | 'orders' | 'feedback' | 'credits';
+type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits';
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [users, setUsers] = useState<RegisteredUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [genPlan, setGenPlan] = useState('triple');
   const [genCount, setGenCount] = useState(5);
   const [genResult, setGenResult] = useState<ActivationCode[] | null>(null);
@@ -120,11 +129,21 @@ export default function AdminPage() {
   const loadFeedbacks = () => {
     fetch('/api/admin/feedback').then(r => r.json()).then(d => setFeedbacks(d.feedbacks || []));
   };
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const res = await fetch('/api/admin/users');
+      const d = await res.json();
+      setUsers(d.users || []);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (sessionStorage.getItem('jiezi-admin-auth') === '1') {
       setAuthed(true);
-      loadOrders(); loadCodes(); loadFeedbacks();
+      loadOrders(); loadCodes(); loadFeedbacks(); loadUsers();
     }
   }, []);
 
@@ -212,7 +231,7 @@ export default function AdminPage() {
             <h1 className="text-xl font-bold text-gray-900 inline">管理后台</h1>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {([['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数']] as [Tab, string][]).map(([key, label]) => (
+            {([['users', '用户'], ['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数']] as [Tab, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -223,6 +242,55 @@ export default function AdminPage() {
             ))}
           </div>
         </div>
+
+        {/* ====== Users Tab ====== */}
+        {tab === 'users' && (
+          <div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-semibold text-gray-900">注册用户</h2>
+                <span className="text-sm text-gray-500">共 {users.length} 人</span>
+              </div>
+              <p className="text-xs text-gray-400 mb-4">
+                数据来源：KV 存储 auth:users —— 仅包含通过邮箱注册的用户
+              </p>
+              {usersLoading ? (
+                <p className="text-sm text-gray-400 py-4 text-center">加载中...</p>
+              ) : users.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">暂无注册用户</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-gray-500">
+                        <th className="pb-2 font-medium">邮箱</th>
+                        <th className="pb-2 font-medium">昵称</th>
+                        <th className="pb-2 font-medium">注册时间</th>
+                        <th className="pb-2 font-medium">User ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u, i) => (
+                        <tr key={i} className="border-b border-gray-50 text-gray-700">
+                          <td className="py-2.5 pr-4">{u.email}</td>
+                          <td className="py-2.5 pr-4">{u.name}</td>
+                          <td className="py-2.5 pr-4 text-gray-400">{new Date(u.createdAt).toLocaleString('zh-CN')}</td>
+                          <td className="py-2.5 text-gray-400 text-xs font-mono">{u.userId.slice(0, 16)}...</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={loadUsers}
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              刷新
+            </button>
+          </div>
+        )}
 
         {/* ====== Activation Codes Tab ====== */}
         {tab === 'codes' && (
