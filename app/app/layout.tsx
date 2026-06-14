@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { getClientId, getUsername, isLoggedIn, logout } from '@/lib/client-id';
+import { getClientId, getUsername, isLoggedIn, logout, getAuthHeaders } from '@/lib/client-id';
 
 const NAV_ITEMS = [
   { href: '/app', label: '新建验证', icon: '✏️' },
@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const refreshCredits = useCallback(() => {
     const userId = getClientId();
     if (userId) {
-      fetch('/api/credits', { headers: { 'x-client-id': userId } })
+      fetch('/api/credits', { headers: { ...getAuthHeaders() } })
         .then(r => r.json())
         .then(d => setBalance(d.balance))
         .catch(() => {});

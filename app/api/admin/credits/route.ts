@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
 import { getBalance, addCredits } from '@/lib/credits';
+import { checkAdminAuth } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
+  if (!checkAdminAuth(request)) {
+    return Response.json({ error: '未授权' }, { status: 401 });
+  }
+
   try {
     const { userId, action, amount } = await request.json();
 

@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getClientId, getUsername, logout } from '@/lib/client-id';
+import { getClientId, getUsername, logout, setAuthToken } from '@/lib/client-id';
 
 type Mode = 'login' | 'register';
 
 export default function SettingsPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('login');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => { setUserName(getUsername()); }, []);
 
   const handleSubmit = async () => {
-    if (!username.trim() || !password) return;
+    if (!email.trim() || !password) return;
     setLoading(true);
     setError('');
 
@@ -27,18 +27,20 @@ export default function SettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.trim(),
+          email: email.trim(),
           password,
-          email: mode === 'register' ? email.trim() : undefined,
+          name: mode === 'register' ? name.trim() : undefined,
           anonymousId: getClientId(),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '操作失败');
 
-      localStorage.setItem('jiezi-username', username.trim());
+      const displayName = data.name || email.trim().split('@')[0];
+      localStorage.setItem('jiezi-username', displayName);
       localStorage.setItem('jiezi-user-id', data.userId);
-      setUserName(username.trim());
+      if (data.token) setAuthToken(data.token);
+      setUserName(displayName);
       setError('');
       setPassword('');
     } catch (e) {
@@ -96,12 +98,13 @@ export default function SettingsPage() {
 
         <div className="px-6 pb-6 space-y-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">用户名</label>
+            <label className="block text-xs text-gray-500 mb-1">邮箱</label>
             <input
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="输入用户名"
+              placeholder="输入邮箱"
               className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
             />
           </div>
@@ -119,12 +122,11 @@ export default function SettingsPage() {
 
           {mode === 'register' && (
             <div>
-              <label className="block text-xs text-gray-500 mb-1">邮箱（用于找回密码）</label>
+              <label className="block text-xs text-gray-500 mb-1">昵称（可选）</label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="输入邮箱"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="输入昵称"
                 className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
               />
             </div>
@@ -134,7 +136,7 @@ export default function SettingsPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={!username.trim() || !password || loading || (mode === 'register' && !email.trim())}
+            disabled={!email.trim() || !password || loading}
             className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? '处理中...' : mode === 'login' ? '登录' : '注册'}
@@ -142,7 +144,7 @@ export default function SettingsPage() {
 
           <p className="text-center text-xs text-gray-400">
             {mode === 'login' ? (
-              <>还没有账号？<button onClick={() => { setMode('register'); setError(''); setEmail(''); }} className="text-emerald-600 hover:text-emerald-700">注册</button></>
+              <>还没有账号？<button onClick={() => { setMode('register'); setError(''); setName(''); }} className="text-emerald-600 hover:text-emerald-700">注册</button></>
             ) : (
               <>已有账号？<button onClick={() => { setMode('login'); setError(''); }} className="text-emerald-600 hover:text-emerald-700">登录</button></>
             )}

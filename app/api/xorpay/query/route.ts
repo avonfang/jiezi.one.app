@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   if (!orderId) {
     return Response.json({ error: '缺少订单编号' }, { status: 400 });
   }
+  if (!/^[0-9a-zA-Z_-]+$/.test(orderId)) {
+    return Response.json({ error: '订单不存在' }, { status: 404 });
+  }
 
   try {
     const ORDERS_DIR = dataDir('orders');

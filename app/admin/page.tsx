@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
-function AdminLogin({ onLogin }: { onLogin: () => void }) {
+function AdminLogin({ onLogin }: { onLogin: (password: string) => void }) {
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,8 +17,9 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
         body: JSON.stringify({ password: pw }),
       });
       if (res.ok) {
-        sessionStorage.setItem('jiezi-admin-auth', '1');
-        onLogin();
+        onLogin(pw);
+      } else if (res.status === 429) {
+        setError('尝试次数过多，请稍后重试');
       } else {
         setError('密码错误');
       }
@@ -102,6 +103,7 @@ const PLAN_NAMES: Record<string, string> = {
 type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits';
 
 export default function AdminPage() {
+  const [adminPassword, setAdminPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
@@ -120,46 +122,62 @@ export default function AdminPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupMsg, setLookupMsg] = useState('');
 
-  const loadOrders = () => {
-    fetch('/api/orders/list').then(r => r.json()).then(d => setOrders(d.orders || []));
-  };
-  const loadCodes = () => {
-    fetch('/api/codes/list').then(r => r.json()).then(d => setCodes(d.codes || []));
-  };
-  const loadFeedbacks = () => {
-    fetch('/api/admin/feedback').then(r => r.json()).then(d => setFeedbacks(d.feedbacks || []));
-  };
-  const loadUsers = async () => {
+  const adminFetch = useCallback((url: string, options?: RequestInit) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options?.headers,
+        'Content-Type': 'application/json',
+        'x-admin-password': adminPassword,
+      },
+    });
+  }, [adminPassword]);
+
+  const loadOrders = useCallback(() => {
+    adminFetch('/api/orders/list').then(r => r.json()).then(d => setOrders(d.orders || []));
+  }, [adminFetch]);
+
+  const loadCodes = useCallback(() => {
+    adminFetch('/api/codes/list').then(r => r.json()).then(d => setCodes(d.codes || []));
+  }, [adminFetch]);
+
+  const loadFeedbacks = useCallback(() => {
+    adminFetch('/api/admin/feedback').then(r => r.json()).then(d => setFeedbacks(d.feedbacks || []));
+  }, [adminFetch]);
+
+  const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const res = await fetch('/api/admin/users');
+      const res = await adminFetch('/api/admin/users');
       const d = await res.json();
       setUsers(d.users || []);
     } finally {
       setUsersLoading(false);
     }
+  }, [adminFetch]);
+
+  const handleLogin = (password: string) => {
+    setAdminPassword(password);
+    setAuthed(true);
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('jiezi-admin-auth') === '1') {
-      setAuthed(true);
+    if (authed) {
       loadOrders(); loadCodes(); loadFeedbacks(); loadUsers();
     }
-  }, []);
+  }, [authed, loadOrders, loadCodes, loadFeedbacks, loadUsers]);
 
   const handleConfirm = async (orderId: string) => {
-    await fetch('/api/orders/confirm', {
+    await adminFetch('/api/orders/confirm', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId }),
     });
     loadOrders();
   };
 
   const handleGenerate = async () => {
-    const res = await fetch('/api/codes/generate', {
+    const res = await adminFetch('/api/codes/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: genPlan, count: genCount }),
     });
     const data = await res.json();
@@ -176,9 +194,8 @@ export default function AdminPage() {
     setLookupMsg('');
     setLookupResult(null);
     try {
-      const res = await fetch('/api/admin/credits', {
+      const res = await adminFetch('/api/admin/credits', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: id, action: 'lookup' }),
       });
       const data = await res.json();
@@ -200,9 +217,8 @@ export default function AdminPage() {
     if (isNaN(amount) || amount < 1) return;
     setLookupLoading(true);
     try {
-      const res = await fetch('/api/admin/credits', {
+      const res = await adminFetch('/api/admin/credits', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: lookupResult.userId, action: 'add', amount }),
       });
       const data = await res.json();
@@ -220,7 +236,7 @@ export default function AdminPage() {
     }
   };
 
-  if (!authed) return <AdminLogin onLogin={() => setAuthed(true)} />;
+  if (!authed) return <AdminLogin onLogin={handleLogin} />;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

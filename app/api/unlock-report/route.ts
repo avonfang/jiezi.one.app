@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import { initCredits, useCredits } from '@/lib/credits';
+import { getUserIdFromRequest } from '@/lib/get-user';
 
 export async function POST(request: NextRequest) {
   try {
-    const clientId = request.headers.get('x-client-id') || '';
+    const clientId = getUserIdFromRequest(request) || '';
     if (!clientId) {
       return Response.json({ error: '缺少用户标识' }, { status: 400 });
     }

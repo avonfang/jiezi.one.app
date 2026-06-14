@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateCodes } from '@/lib/codes';
+import { checkAdminAuth } from '@/lib/admin-auth';
 
 const PLANS: Record<string, { credits: number; label: string }> = {
   basic: { credits: 7, label: '体验装' },
@@ -10,6 +11,10 @@ const PLANS: Record<string, { credits: number; label: string }> = {
 };
 
 export async function POST(request: NextRequest) {
+  if (!checkAdminAuth(request)) {
+    return Response.json({ error: '未授权' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { plan, count } = body as { plan: string; count: number };

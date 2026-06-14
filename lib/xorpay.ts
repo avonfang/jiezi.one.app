@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 
 export function getXorpayConfig() {
   const aid = process.env.XORPAY_AID;
@@ -31,7 +31,10 @@ export function verifyNotifySign(
 ): boolean {
   const str = params.aoid + params.order_id + params.pay_price + params.pay_time + appSecret;
   const expected = createHash('md5').update(str).digest('hex');
-  return expected === params.sign;
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const signBuf = Buffer.from(params.sign, 'hex');
+  if (expectedBuf.length !== signBuf.length) return false;
+  return timingSafeEqual(expectedBuf, signBuf);
 }
 
 /**

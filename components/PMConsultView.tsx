@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { getClientId } from '@/lib/client-id';
+import { getAuthHeaders } from '@/lib/client-id';
 import type { ChatMessage, ValidationReport } from '@/lib/types';
 
 interface PMConsultViewProps {
@@ -32,7 +32,7 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
     try {
       const res = await fetch('/api/pm-consult', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ idea, report, messages: updatedMessages }),
       });
 

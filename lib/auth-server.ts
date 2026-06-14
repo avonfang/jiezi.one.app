@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import { kvGet, kvSet, kvDel } from './kv-store';
 
 const AUTH_KEY = 'auth:users';
-const EMAIL_KEY = 'auth:emails';
 const RESET_PREFIX = 'reset_token:';
 
 interface StoredUser {
@@ -10,6 +9,7 @@ interface StoredUser {
   passwordHash: string;
   salt: string;
   email: string;
+  name: string; // display name (optional)
   createdAt: number;
 }
 
@@ -22,44 +22,31 @@ function writeUsers(users: Record<string, StoredUser>): Promise<void> {
   return kvSet(AUTH_KEY, users);
 }
 
-async function readEmailMap(): Promise<Record<string, string>> {
-  const data = await kvGet<Record<string, string>>(EMAIL_KEY);
-  return data || {};
-}
-
-function writeEmailMap(map: Record<string, string>): Promise<void> {
-  return kvSet(EMAIL_KEY, map);
-}
+const PBKDF2_ITERATIONS = parseInt(process.env.PBKDF2_ITERATIONS || '600000', 10);
 
 function hashPassword(password: string, salt: string): string {
-  return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, 64, 'sha512').toString('hex');
 }
 
-export async function registerUser(username: string, password: string, email?: string): Promise<{ userId: string }> {
-  const cleaned = username.trim().toLowerCase();
-  if (cleaned.length < 2) throw new Error('用户名至少 2 个字符');
+export async function registerUser(email: string, password: string, name?: string): Promise<{ userId: string }> {
+  const emailStr = email.trim().toLowerCase();
+  if (!emailStr.includes('@')) throw new Error('邮箱格式不正确');
   if (password.length < 4) throw new Error('密码至少 4 个字符');
 
   const users = await readUsers();
-  if (users[cleaned]) throw new Error('用户名已存在');
-
-  // Check email uniqueness if provided
-  if (email) {
-    const emailStr = email.trim().toLowerCase();
-    if (!emailStr.includes('@')) throw new Error('邮箱格式不正确');
-    const emailMap = await readEmailMap();
-    if (emailMap[emailStr]) throw new Error('该邮箱已被注册');
-    emailMap[emailStr] = cleaned;
-    await writeEmailMap(emailMap);
+  if (users[emailStr]) {
+    // Return generic error to prevent email enumeration
+    throw new Error('注册失败，请检查信息后重试');
   }
 
-  const userId = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const userId = 'u_' + crypto.randomBytes(12).toString('hex');
   const salt = crypto.randomBytes(16).toString('hex');
-  users[cleaned] = {
+  users[emailStr] = {
     userId,
     passwordHash: hashPassword(password, salt),
     salt,
-    email: (email || '').trim().toLowerCase(),
+    email: emailStr,
+    name: (name || '').trim() || emailStr.split('@')[0],
     createdAt: Date.now(),
   };
 
@@ -67,36 +54,44 @@ export async function registerUser(username: string, password: string, email?: s
   return { userId };
 }
 
-export async function loginUser(username: string, password: string): Promise<{ userId: string } | null> {
-  const cleaned = username.trim().toLowerCase();
+export async function loginUser(emailOrUsername: string, password: string): Promise<{ userId: string; name: string } | null> {
+  const cleaned = emailOrUsername.trim().toLowerCase();
   const users = await readUsers();
-  const user = users[cleaned];
+
+  // First try email lookup
+  let user = users[cleaned];
+  // If not found, try username lookup (backward compat for old accounts)
+  if (!user) {
+    const entry = Object.entries(users).find(([, u]) => u.name?.toLowerCase() === cleaned);
+    if (entry) user = entry[1];
+  }
+
   if (!user) return null;
 
   const attemptHash = hashPassword(password, user.salt);
-  if (attemptHash !== user.passwordHash) return null;
+  const actualHash = user.passwordHash;
 
-  return { userId: user.userId };
+  // Constant-time comparison to prevent timing attacks
+  const buf1 = Buffer.from(attemptHash, 'hex');
+  const buf2 = Buffer.from(actualHash, 'hex');
+  if (buf1.length !== buf2.length || !crypto.timingSafeEqual(buf1, buf2)) return null;
+
+  return { userId: user.userId, name: user.name || user.email.split('@')[0] };
 }
 
-export async function getUserIdByUsername(username: string): Promise<string | null> {
-  const cleaned = username.trim().toLowerCase();
-  const users = await readUsers();
-  const user = users[cleaned];
-  return user ? user.userId : null;
-}
-
-export async function getUserByEmail(email: string): Promise<{ username: string; userId: string } | null> {
+export async function getUserByEmail(email: string): Promise<{ userId: string; name: string } | null> {
   const emailStr = email.trim().toLowerCase();
-  const emailMap = await readEmailMap();
-  const username = emailMap[emailStr];
-  if (!username) return null;
-
   const users = await readUsers();
-  const user = users[username];
+  const user = users[emailStr];
   if (!user) return null;
+  return { userId: user.userId, name: user.name || emailStr.split('@')[0] };
+}
 
-  return { username, userId: user.userId };
+export async function getUserByUserId(userId: string): Promise<{ email: string; name: string } | null> {
+  const users = await readUsers();
+  const entry = Object.entries(users).find(([, u]) => u.userId === userId);
+  if (!entry) return null;
+  return { email: entry[1].email, name: entry[1].name || entry[1].email.split('@')[0] };
 }
 
 export async function updatePassword(userId: string, newPassword: string): Promise<void> {
@@ -104,19 +99,20 @@ export async function updatePassword(userId: string, newPassword: string): Promi
 
   const users = await readUsers();
   const entry = Object.entries(users).find(([, u]) => u.userId === userId);
-  if (!entry) throw new Error('用户不存在');
+  if (!entry) throw new Error('操作失败');
 
-  const [username] = entry;
   const salt = crypto.randomBytes(16).toString('hex');
-  users[username].passwordHash = hashPassword(newPassword, salt);
-  users[username].salt = salt;
+  entry[1].passwordHash = hashPassword(newPassword, salt);
+  entry[1].salt = salt;
   await writeUsers(users);
 }
 
-export async function getUsernameByUserId(userId: string): Promise<string | null> {
+export async function getUserIdByUsername(username: string): Promise<string | null> {
+  // Backward compat: lookup by name field
+  const cleaned = username.trim().toLowerCase();
   const users = await readUsers();
-  const entry = Object.entries(users).find(([, u]) => u.userId === userId);
-  return entry ? entry[0] : null;
+  const entry = Object.entries(users).find(([, u]) => u.name?.toLowerCase() === cleaned);
+  return entry ? entry[1].userId : null;
 }
 
 // Reset token functions
@@ -125,7 +121,7 @@ export async function createResetToken(userId: string, email: string): Promise<s
   await kvSet(RESET_PREFIX + token, {
     userId,
     email: email.trim().toLowerCase(),
-    expiresAt: Date.now() + 3600000, // 1 hour
+    expiresAt: Date.now() + 3600000,
   });
   return token;
 }

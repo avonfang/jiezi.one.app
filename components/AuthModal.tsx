@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { setAuthToken } from '@/lib/client-id';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -12,13 +13,13 @@ type Mode = 'login' | 'register';
 
 export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>('login');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
-    if (!username.trim() || !password) return;
+    if (!email.trim() || !password) return;
     setLoading(true);
     setError('');
 
@@ -28,7 +29,7 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.trim(),
+          email: email.trim(),
           password,
           anonymousId,
         }),
@@ -38,8 +39,9 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
       if (!res.ok) throw new Error(data.error || '操作失败');
 
       // Save auth state
-      localStorage.setItem('jiezi-username', username.trim());
+      localStorage.setItem('jiezi-username', data.name || email.trim().split('@')[0]);
       localStorage.setItem('jiezi-user-id', data.userId);
+      if (data.token) setAuthToken(data.token);
       onAuth(data.userId);
     } catch (e) {
       setError(e instanceof Error ? e.message : '操作失败');
@@ -71,12 +73,13 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
 
         <div className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">用户名</label>
+            <label className="block text-xs text-gray-500 mb-1">邮箱</label>
             <input
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="输入用户名"
+              placeholder="输入邮箱"
               className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -98,7 +101,7 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
 
           <button
             onClick={handleSubmit}
-            disabled={!username.trim() || !password || loading}
+            disabled={!email.trim() || !password || loading}
             className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? '处理中...' : mode === 'login' ? '登录' : '注册'}

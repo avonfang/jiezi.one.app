@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getClientId } from '@/lib/client-id';
+import { getClientId, getAuthHeaders } from '@/lib/client-id';
 
 export default function CreditBadge() {
   const [balance, setBalance] = useState<number | null>(null);
@@ -9,7 +9,7 @@ export default function CreditBadge() {
   const fetchBalance = () => {
     const userId = getClientId();
     if (!userId) return;
-    fetch('/api/credits', { headers: { 'x-client-id': userId } })
+    fetch('/api/credits', { headers: { ...getAuthHeaders() } })
       .then(r => r.json())
       .then(data => setBalance(data.balance))
       .catch(() => setBalance(0));

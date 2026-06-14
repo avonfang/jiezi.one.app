@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getClientId } from '@/lib/client-id';
+import { getClientId, getAuthHeaders } from '@/lib/client-id';
 import QRCode from 'qrcode';
 
 const PLANS = [
@@ -72,7 +72,7 @@ export default function PricingPage() {
   const refreshBalance = () => {
     const userId = getClientId();
     if (!userId) return;
-    fetch('/api/credits', { headers: { 'x-client-id': userId } })
+    fetch('/api/credits', { headers: { ...getAuthHeaders() } })
       .then(r => r.json()).then(d => setBalance(d.balance)).catch(() => {});
   };
 

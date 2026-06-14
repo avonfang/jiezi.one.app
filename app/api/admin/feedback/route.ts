@@ -1,10 +1,16 @@
+import { NextRequest } from 'next/server';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
 import { dataDir } from '@/lib/data-dir';
+import { checkAdminAuth } from '@/lib/admin-auth';
 
 const FEEDBACK_DIR = dataDir('feedback');
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!checkAdminAuth(request)) {
+    return Response.json({ error: '未授权' }, { status: 401 });
+  }
+
   try {
     const files = await readdir(FEEDBACK_DIR).catch(() => []);
     const feedbacks = await Promise.all(

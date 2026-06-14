@@ -1,8 +1,15 @@
 import { NextRequest } from 'next/server';
-import { verifyResetToken, consumeResetToken, updatePassword, getUsernameByUserId } from '@/lib/auth-server';
+import { verifyResetToken, consumeResetToken, updatePassword } from '@/lib/auth-server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rl = await checkRateLimit(`reset-password:${ip}`, 5, 60000);
+    if (!rl.allowed) {
+      return Response.json({ error: '请求过于频繁，请稍后重试' }, { status: 429 });
+    }
+
     const { token, password } = await request.json();
 
     if (!token || !password) {

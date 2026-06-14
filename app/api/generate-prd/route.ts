@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { chatCompletionStream } from '@/lib/deepseek';
 import { initCredits, useCredits } from '@/lib/credits';
 import type { PRD } from '@/lib/types';
+import { getUserIdFromRequest } from '@/lib/get-user';
 
 const CONTEXT = `你是一个资深产品经理。根据产品想法和验证报告，生成一份结构化的中文 PRD，只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。
 
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Credit check — PRD costs 2 credits
-    const clientId = request.headers.get('x-client-id') || '';
+    const clientId = getUserIdFromRequest(request) || '';
     if (!clientId) {
       return Response.json({ error: '缺少用户标识' }, { status: 400 });
     }

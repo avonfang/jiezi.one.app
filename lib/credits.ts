@@ -1,4 +1,4 @@
-import { kvGet, kvSet } from './kv-store';
+import { kvGet, kvSet, kvUseCredits, kvAddCredits } from './kv-store';
 
 function creditKey(userId: string) {
   return `credits:${userId}`;
@@ -26,20 +26,11 @@ export async function useCredit(userId: string): Promise<boolean> {
 }
 
 export async function useCredits(userId: string, amount: number): Promise<boolean> {
-  const record = await kvGet<CreditRecord>(creditKey(userId));
-  if (!record || record.balance < amount) return false;
-  record.balance -= amount;
-  await kvSet(creditKey(userId), record);
-  return true;
+  const result = await kvUseCredits(creditKey(userId), amount);
+  return result >= 0;
 }
 
 export async function addCredits(userId: string, amount: number): Promise<number> {
-  let record = await kvGet<CreditRecord>(creditKey(userId));
-  if (!record) {
-    record = { balance: 0, total_purchased: 0, created_at: Date.now() };
-  }
-  record.balance += amount;
-  record.total_purchased += amount;
-  await kvSet(creditKey(userId), record);
-  return record.balance;
+  const result = await kvAddCredits(creditKey(userId), amount);
+  return result >= 0 ? result : 0;
 }

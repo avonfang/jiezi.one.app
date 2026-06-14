@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
 import { confirmOrder } from '@/lib/orders';
+import { checkAdminAuth } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
+  if (!checkAdminAuth(request)) {
+    return Response.json({ error: '未授权' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { orderId } = body as { orderId: string };

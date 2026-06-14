@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { dataDir } from '@/lib/data-dir';
 import type { ShareData } from '@/lib/types';
+import { generateShortId } from '@/lib/id-gen';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,13 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    // Limit payload size
+    const raw = JSON.stringify(body);
+    if (raw.length > 1048576) {
+      return Response.json({ error: '内容过大，无法分享' }, { status: 400 });
+    }
+
+    const id = generateShortId(12);
     const dir = dataDir('shares');
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 

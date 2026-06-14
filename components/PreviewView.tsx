@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toPng } from 'html-to-image';
+import DOMPurify from 'dompurify';
 import type { PreviewPage } from '@/lib/types';
 
 interface PreviewViewProps {
@@ -46,8 +47,11 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showShareMenu]);
 
-  // Inject auto-height script into the preview HTML
-  const srcDoc = preview.html.replace(
+  // Sanitize AI-generated HTML to prevent XSS
+  const sanitizedHtml = useMemo(() => DOMPurify.sanitize(preview.html), [preview.html]);
+
+  // Inject auto-height script into the sanitized preview HTML
+  const srcDoc = sanitizedHtml.replace(
     '</body>',
     `<script>window.addEventListener('load',function(){
       var h=document.documentElement.scrollHeight;
@@ -75,7 +79,7 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
       // fallback: open in new window for manual save
       const win = window.open('', '_blank');
       if (win) {
-        win.document.write(preview.html);
+        win.document.write(sanitizedHtml);
         win.document.close();
       }
     } finally {
@@ -150,7 +154,7 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
             onClick={() => {
               const win = window.open('', '_blank');
               if (win) {
-                win.document.write(preview.html);
+                win.document.write(sanitizedHtml);
                 win.document.close();
               }
             }}

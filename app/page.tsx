@@ -7,7 +7,7 @@ import IdeaInput from '@/components/IdeaInput';
 import LoadingState from '@/components/LoadingState';
 import AuthModal from '@/components/AuthModal';
 import CreditBadge from '@/components/CreditBadge';
-import { getClientId, getUsername } from '@/lib/client-id';
+import { getClientId, getUsername, getAuthHeaders } from '@/lib/client-id';
 import type { ValidationReport } from '@/lib/types';
 
 const SAMPLE_IDEAS = [
@@ -276,7 +276,7 @@ export default function Home() {
     try {
       const res = await fetch('/api/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ idea: text }),
       });
 
@@ -385,10 +385,9 @@ export default function Home() {
   const handleGoToApp = async () => {
     if (!report || !lastIdea) return;
 
-    const clientId = getClientId();
     const res = await fetch('/api/unlock-report', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     });
 
     if (res.status === 402) {
@@ -408,10 +407,9 @@ export default function Home() {
     router.push('/app');
   };
   const handleViewRecent = async (record: { idea: string; report: ValidationReport }) => {
-    const clientId = getClientId();
     const res = await fetch('/api/unlock-report', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     });
 
     if (res.status === 402) {

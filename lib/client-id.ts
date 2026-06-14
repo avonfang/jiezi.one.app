@@ -1,3 +1,5 @@
+const TOKEN_KEY = 'jiezi-auth-token';
+
 export function getClientId(): string {
   if (typeof window === 'undefined') return '';
 
@@ -28,4 +30,26 @@ export function logout(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('jiezi-user-id');
   localStorage.removeItem('jiezi-username');
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+/**
+ * Get auth headers: uses Bearer token if available, falls back to x-client-id
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return { 'x-client-id': getClientId() };
 }

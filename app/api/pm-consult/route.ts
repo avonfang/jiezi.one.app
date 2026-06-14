@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { chatCompletion } from '@/lib/deepseek';
 import { useCredit, initCredits } from '@/lib/credits';
 import type { ChatMessage, ValidationReport } from '@/lib/types';
+import { getUserIdFromRequest } from '@/lib/get-user';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const clientId = request.headers.get('x-client-id') || '';
+    const clientId = getUserIdFromRequest(request) || '';
     if (!clientId) {
       return Response.json(
         { error: '缺少用户标识' },

@@ -10,6 +10,9 @@ export async function POST(request: Request) {
     if (!content || typeof content !== 'string' || content.trim().length < 2) {
       return Response.json({ error: '内容太短' }, { status: 400 });
     }
+    if (content.length > 5000) {
+      return Response.json({ error: '内容过长，请精简到 5000 字以内' }, { status: 400 });
+    }
 
     await mkdir(FEEDBACK_DIR, { recursive: true });
     const id = Date.now().toString(36);

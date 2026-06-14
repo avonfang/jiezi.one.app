@@ -1,5 +1,6 @@
 import { kvGet, kvSet } from './kv-store';
 import { addCredits } from './credits';
+import { generateShortId } from './id-gen';
 
 const IDS_KEY = 'orders:ids';
 
@@ -22,7 +23,7 @@ function orderKey(id: string) {
 
 export async function createOrder(userId: string, plan: string, credits: number, price: string, transactionId: string): Promise<OrderRecord> {
   const order: OrderRecord = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: generateShortId(12),
     userId,
     plan,
     credits,

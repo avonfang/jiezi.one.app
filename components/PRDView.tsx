@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { PRD } from '@/lib/types';
-import { getClientId } from '@/lib/client-id';
+import { getAuthHeaders } from '@/lib/client-id';
 
 interface PRDViewProps {
   prd: PRD;
@@ -33,13 +33,10 @@ export default function PRDView({ prd, onBack, onGeneratePreview, previewLoading
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cid = getClientId();
-    if (cid) {
-      fetch('/api/credits', { headers: { 'x-client-id': cid } })
+    fetch('/api/credits', { headers: { ...getAuthHeaders() } })
         .then(r => r.json())
         .then(d => setBalance(d.balance))
         .catch(() => {});
-    }
   }, []);
 
   useEffect(() => {

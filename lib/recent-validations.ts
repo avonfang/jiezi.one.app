@@ -1,5 +1,6 @@
 import { kvGet, kvSet } from './kv-store';
 import type { ValidationReport } from './types';
+import { generateShortId } from './id-gen';
 
 const VALIDATIONS_KEY = 'recent:validations';
 const MAX_RECORDS = 20;
@@ -16,15 +17,11 @@ export interface RecentRecord {
   created_at: number;
 }
 
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-}
-
 export async function saveValidation(idea: string, report: ValidationReport): Promise<void> {
   let records = await kvGet<RecentRecord[]>(VALIDATIONS_KEY) || [];
 
   records.unshift({
-    id: generateId(),
+    id: generateShortId(8),
     idea,
     verdict: report.verdict,
     verdict_reason: report.verdict_reason,

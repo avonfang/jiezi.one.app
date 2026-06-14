@@ -4,6 +4,7 @@ import { search } from '@/lib/brave-search';
 import { useCredit, initCredits } from '@/lib/credits';
 import { saveValidation } from '@/lib/recent-validations';
 import type { ValidationReport } from '@/lib/types';
+import { getUserIdFromRequest } from '@/lib/get-user';
 
 const encoder = new TextEncoder();
 
@@ -24,7 +25,7 @@ function errorEvent(message: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const clientId = request.headers.get('x-client-id');
+  const clientId = getUserIdFromRequest(request);
   if (!clientId) {
     return Response.json({ error: '缺少客户端标识' }, { status: 400 });
   }
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
   const idea = body?.idea?.trim();
   if (!idea || typeof idea !== 'string' || idea.length < 4) {
     return Response.json({ error: '请输入至少 4 个字符描述你的产品想法' }, { status: 400 });
+  }
+  if (idea.length > 5000) {
+    return Response.json({ error: '产品想法描述过长，请精简到 5000 字以内' }, { status: 400 });
   }
 
   const stream = new ReadableStream({

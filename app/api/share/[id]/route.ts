@@ -10,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!/^[0-9a-z]+$/i.test(id)) {
+      return Response.json({ error: '分享链接不存在或已过期' }, { status: 404 });
+    }
     const filePath = path.join(dataDir('shares'), `${id}.json`);
 
     if (!existsSync(filePath)) {

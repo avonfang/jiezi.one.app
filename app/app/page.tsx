@@ -9,7 +9,7 @@ import PreviewView from '@/components/PreviewView';
 import PMConsultView from '@/components/PMConsultView';
 import SummaryView from '@/components/SummaryView';
 import HistoryPanel from '@/components/HistoryPanel';
-import { getClientId } from '@/lib/client-id';
+import { getAuthHeaders } from '@/lib/client-id';
 import type { ValidationReport, PRD, PreviewPage, AppStatus, HistoryItem } from '@/lib/types';
 
 const SAMPLE_IDEAS = [
@@ -175,12 +175,10 @@ export default function AppPage() {
     setView('report');
     setLoadingStage('extracting');
     setStreamTokens('');
-    const clientId = getClientId();
-
     try {
       const res = await fetch('/api/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ idea: text }),
       });
 
@@ -255,7 +253,7 @@ export default function AppPage() {
     try {
       const res = await fetch('/api/generate-prd', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ idea, report }),
       });
 
@@ -327,7 +325,7 @@ export default function AppPage() {
     try {
       const res = await fetch('/api/generate-preview', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ prd }),
       });
 
@@ -416,7 +414,7 @@ export default function AppPage() {
   const handleViewPrd = async () => {
     const res = await fetch('/api/unlock-report', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     });
     if (res.status === 402) {
       window.location.href = '/pricing';
