@@ -1,10 +1,7 @@
-import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
-import { dataDir } from './data-dir';
+import { kvGet, kvSet } from './kv-store';
 import { addCredits } from './credits';
 
-const CODES_DIR = dataDir('codes');
+const IDS_KEY = 'codes:ids';
 
 interface ActivationCode {
   code: string;
@@ -16,14 +13,17 @@ interface ActivationCode {
   created_at: number;
 }
 
+function codeKey(str: string) {
+  return `code:${str}`;
+}
+
 function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const part = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   return `JZ-${part()}-${part()}`;
 }
 
 export async function generateCodes(count: number, credits: number, plan: string): Promise<ActivationCode[]> {
-  await mkdir(CODES_DIR, { recursive: true });
   const codes: ActivationCode[] = [];
   for (let i = 0; i < count; i++) {
     const code: ActivationCode = {
@@ -33,41 +33,43 @@ export async function generateCodes(count: number, credits: number, plan: string
       status: 'active',
       created_at: Date.now(),
     };
-    await writeFile(path.join(CODES_DIR, `${code.code}.json`), JSON.stringify(code), 'utf-8');
+    await kvSet(codeKey(code.code), code);
     codes.push(code);
   }
+
+  // Maintain code ID list
+  const ids = await kvGet<string[]>(IDS_KEY) || [];
+  for (const code of codes) {
+    ids.unshift(code.code);
+  }
+  await kvSet(IDS_KEY, ids);
+
   return codes;
 }
 
 export async function listCodes(): Promise<ActivationCode[]> {
-  if (!existsSync(CODES_DIR)) return [];
-  const files = await readdir(CODES_DIR);
+  const ids = await kvGet<string[]>(IDS_KEY) || [];
   const codes: ActivationCode[] = [];
-  for (const file of files) {
-    if (!file.endsWith('.json')) continue;
-    try {
-      const raw = await readFile(path.join(CODES_DIR, file), 'utf-8');
-      codes.push(JSON.parse(raw));
-    } catch { /* skip */ }
+  for (const id of ids) {
+    const code = await kvGet<ActivationCode>(codeKey(id));
+    if (code) codes.push(code);
   }
   return codes.sort((a, b) => b.created_at - a.created_at);
 }
 
 export async function redeemCode(codeStr: string, userId: string): Promise<{ ok: true; credits: number } | { ok: false; error: string }> {
   const normalized = codeStr.trim().toUpperCase();
-  const filePath = path.join(CODES_DIR, `${normalized}.json`);
-  if (!existsSync(filePath)) {
+  const code = await kvGet<ActivationCode>(codeKey(normalized));
+  if (!code) {
     return { ok: false, error: '激活码不存在' };
   }
-  const raw = await readFile(filePath, 'utf-8');
-  const code: ActivationCode = JSON.parse(raw);
   if (code.status !== 'active') {
     return { ok: false, error: '该激活码已被使用' };
   }
   code.status = 'redeemed';
   code.redeemed_by = userId;
   code.redeemed_at = Date.now();
-  await writeFile(filePath, JSON.stringify(code), 'utf-8');
+  await kvSet(codeKey(normalized), code);
   await addCredits(userId, code.credits);
   return { ok: true, credits: code.credits };
 }

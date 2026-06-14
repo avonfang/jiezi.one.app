@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
 ${searchText}
 
 要求：
-- market_score 给这个产品方向的市场前景打分（0-100）
-- feasibility_score 给你的开发可行性打分（0-100）
+- market_score 给这个产品方向的市场前景打分（0-10）
+- feasibility_score 给你的开发可行性打分（0-10）
 - 竞品的 source_url 填写搜索来源中的真实URL
 - swot 每个维度至少2条
 - 所有评分和判断需基于搜索结果的真实信息，不要编造
@@ -129,8 +129,23 @@ ${searchText}
   "verdict": "建议尝试" | "值得探索" | "暂不建议",
   "verdict_reason": "判断理由（2-3句话）",
   "sharp_comment": "一句毒舌评价，点出这个想法最致命的弱点或最值得警惕的风险，语气犀利但不刻薄，20-40字",
+  "summary": {
+    "market_opportunity": "市场机会大小评估（低/中等/中等偏高/高）",
+    "tech_difficulty": "技术难度评估（低/中等/高）",
+    "startup_cost": "启动成本估算，带具体数字范围，如'15-25万'",
+    "payback_period": "回本周期估算，如'6-12个月'",
+    "one_liner": "用一句话总结这个想法值不值得做、为什么（30字以内）"
+  },
   "market_score": 数值0-10,
   "feasibility_score": 数值0-10,
+  "scoring": {
+    "market_size": "市场规模评分（1-5）",
+    "user_demand": "用户需求评分（1-5）",
+    "competition_density": "竞争密度评分，分数越高竞争越小（1-5）",
+    "monetization_potential": "付费潜力评分（1-5）",
+    "tech_feasibility": "技术可行性评分（1-5）",
+    "team_cost": "团队与成本评分（1-5）"
+  },
   "market_analysis": {
     "competitor_count": "竞品数量评估",
     "demand": "市场需求强度",

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { toPng } from 'html-to-image';
 import { useRouter } from 'next/navigation';
 import IdeaInput from '@/components/IdeaInput';
 import LoadingState from '@/components/LoadingState';
@@ -36,21 +37,216 @@ function scoreColor(score: number) {
   return 'text-red-500';
 }
 
+function normalizedScore(...scores: number[]): number {
+  const max = Math.max(...scores.filter(n => !isNaN(n)), 0);
+  const avg = scores.reduce((a, b) => a + (isNaN(b) ? 0 : b), 0) / scores.length;
+  // If scores appear to be on a 0-100 scale, normalize to 0-10
+  return max > 10 ? avg / 10 : avg;
+}
+
+function ScoringItem({ label, value, color }: { label: string; value: number; color: string }) {
+  const dots = '●'.repeat(Math.max(0, Math.min(5, value || 0))) + '○'.repeat(Math.max(0, 5 - Math.min(5, value || 0)));
+  const colorClass = color === 'indigo' ? 'text-indigo-400' : 'text-blue-400';
+  const tooltipText = value >= 4 ? '评分较高' : value >= 3 ? '评分中等' : '评分较低';
+  return (
+    <div className="text-center group relative">
+      <p className="text-[10px] text-gray-400 mb-0.5">{label}</p>
+      <p className={`text-xs tracking-wider cursor-help ${colorClass}`}>{dots}</p>
+      {/* Tooltip */}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-gray-800 text-white text-[10px] leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+        {value}/5 · {tooltipText}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+      </div>
+    </div>
+  );
+}
+
+function estimatePercent(value: string | undefined, type: 'opportunity' | 'difficulty' | 'cost' | 'payback'): number {
+  if (!value) return 50;
+  if (type === 'opportunity') {
+    if (value.includes('大')) return 80;
+    if (value.includes('中')) return 55;
+    if (value.includes('小')) return 25;
+  }
+  if (type === 'difficulty') {
+    if (value.includes('高')) return 80;
+    if (value.includes('中')) return 50;
+    if (value.includes('低')) return 25;
+  }
+  if (type === 'cost') {
+    const nums = value.match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const avg = (parseInt(nums[0]) + parseInt(nums[1])) / 2;
+      return Math.min(95, Math.max(5, (avg / 200) * 100));
+    }
+  }
+  if (type === 'payback') {
+    const nums = value.match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const avg = (parseInt(nums[0]) + parseInt(nums[1])) / 2;
+      return Math.min(95, Math.max(5, (avg / 36) * 100));
+    }
+  }
+  return 50;
+}
+
+function SummaryCard({ report, idea, starRating, verdictStyles }: {
+  report: ValidationReport;
+  idea: string;
+  starRating: (avg: number) => string;
+  verdictStyles: Record<string, string>;
+}) {
+  const s = report.summary;
+  const totalScore = normalizedScore(report.market_score, report.feasibility_score);
+  const scorePct = Math.min(100, Math.max(0, (totalScore / 10) * 100));
+  const CIRC = 97.4;
+  const starColor = totalScore >= 7 ? 'text-yellow-500' : totalScore >= 5 ? 'text-amber-500' : 'text-gray-300';
+  const ringColor = totalScore >= 7 ? '#10b981' : totalScore >= 5 ? '#f59e0b' : '#9ca3af';
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Gradient accent strip */}
+      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+
+      <div className="p-6">
+        {/* Brand + idea */}
+        <div className="mb-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-sm">🌱</span>
+            <span className="text-[10px] text-gray-300 font-medium tracking-wider">芥子 · AI 产品验证</span>
+          </div>
+          <p className="text-sm font-medium text-gray-800 leading-relaxed line-clamp-2">{idea}</p>
+        </div>
+
+        {/* Top: verdict + rating */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${verdictStyles[report.verdict] || ''}`}>
+              {report.verdict}
+            </span>
+            <span className={`text-sm tracking-wider ${starColor}`}>
+              {starRating(totalScore)}
+            </span>
+          </div>
+          <div className="relative w-14 h-14">
+            <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke={ringColor} strokeWidth="3"
+                strokeDasharray={`${(scorePct / 100) * CIRC} ${CIRC}`} strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-bold text-gray-800">{totalScore.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Key metrics grid */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {[
+            { label: '市场机会', key: 'market_opportunity', type: 'opportunity' as const, icon: '📈', bg: 'from-blue-50 to-blue-50/50', bar: 'bg-blue-400' },
+            { label: '技术难度', key: 'tech_difficulty', type: 'difficulty' as const, icon: '⚙️', bg: 'from-purple-50 to-purple-50/50', bar: 'bg-purple-400' },
+            { label: '启动成本', key: 'startup_cost', type: 'cost' as const, icon: '💰', bg: 'from-amber-50 to-amber-50/50', bar: 'bg-amber-400' },
+            { label: '回本周期', key: 'payback_period', type: 'payback' as const, icon: '⏱️', bg: 'from-green-50 to-green-50/50', bar: 'bg-green-400' },
+          ].map(m => {
+            const val = s?.[m.key as keyof typeof s] as string | undefined;
+            const pct = estimatePercent(val, m.type);
+            return (
+              <div key={m.key} className={`bg-gradient-to-br ${m.bg} rounded-lg p-3`}>
+                <div className="flex items-center justify-center gap-1 mb-1.5">
+                  <span className="text-xs">{m.icon}</span>
+                  <span className="text-[10px] font-medium text-gray-500">{m.label}</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-800 text-center mb-2">{val || '-'}</p>
+                {/* Progress bar with pointer */}
+                <div className="relative h-1.5 bg-white/60 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${m.bar} opacity-60`} style={{ width: `${pct}%` }} />
+                  <div className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-white ${m.bar} shadow-sm`}
+                    style={{ left: `calc(${pct}% - 5px)` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* One-liner conclusion */}
+        {s?.one_liner && (
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              一句话总结
+            </h3>
+            <div className="bg-emerald-50/60 rounded-lg overflow-hidden">
+              <div className="flex">
+                <div className="w-1 bg-emerald-400 shrink-0" />
+                <div className="flex-1 px-4 py-3">
+                  <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                    &ldquo;{s.one_liner}&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const [demoHtml, setDemoHtml] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [sampleIdea, setSampleIdea] = useState('');
-  const [lastIdea, setLastIdea] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [report, setReport] = useState<ValidationReport | null>(null);
+  const [lastIdea, setLastIdea] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jiezi-full-report');
+      if (saved) return JSON.parse(saved).idea || '';
+    } catch { /* ignore */ }
+    return '';
+  });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(() => {
+    try {
+      const saved = localStorage.getItem('jiezi-full-report');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.idea && parsed.report ? 'success' : 'idle';
+      }
+    } catch { /* ignore */ }
+    return 'idle';
+  });
+  const [report, setReport] = useState<ValidationReport | null>(() => {
+    try {
+      const saved = localStorage.getItem('jiezi-full-report');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.report || null;
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
   const [error, setError] = useState('');
   const [loadingStage, setLoadingStage] = useState('extracting');
   const [loadingMessage, setLoadingMessage] = useState('');
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [imgSaving, setImgSaving] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+  const fullReportRef = useRef<HTMLDivElement>(null);
   const [recentRecords, setRecentRecords] = useState<{ id: string; idea: string; verdict: string; market_score: number; feasibility_score: number; target_users: string; report: ValidationReport; created_at: number }[]>([]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClick);
+    }
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showShareMenu]);
 
   useEffect(() => {
     setUserName(getUsername());
@@ -74,6 +270,7 @@ export default function Home() {
     setError('');
     setLoadingStage('extracting');
     setLastIdea(text);
+    localStorage.removeItem('jiezi-full-report');
     const clientId = getClientId();
 
     try {
@@ -139,6 +336,23 @@ export default function Home() {
     }
   };
 
+  const handleSaveImage = async () => {
+    if (!fullReportRef.current) return;
+    setImgSaving(true);
+    try {
+      const dataUrl = await toPng(fullReportRef.current, { backgroundColor: '#fff' });
+      const link = document.createElement('a');
+      link.download = `芥子-产品验证.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // fallback
+    } finally {
+      setImgSaving(false);
+      setShowShareMenu(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!report || !lastIdea) return;
     setSharing(true);
@@ -168,14 +382,44 @@ export default function Home() {
     setSampleIdea('');
   };
 
-  const handleGoToApp = () => {
-    if (report && lastIdea) {
-      localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: lastIdea, report }));
+  const handleGoToApp = async () => {
+    if (!report || !lastIdea) return;
+
+    const clientId = getClientId();
+    const res = await fetch('/api/unlock-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+    });
+
+    if (res.status === 402) {
+      router.push('/pricing');
+      return;
     }
+
+    if (!res.ok) {
+      // fallback: still allow navigation even if unlock fails
+      localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: lastIdea, report }));
+      router.push('/app');
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('credits-changed'));
+    localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: lastIdea, report }));
     router.push('/app');
   };
+  const handleViewRecent = async (record: { idea: string; report: ValidationReport }) => {
+    const clientId = getClientId();
+    const res = await fetch('/api/unlock-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
+    });
 
-  const handleViewRecent = (record: { idea: string; report: ValidationReport }) => {
+    if (res.status === 402) {
+      router.push('/pricing');
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('credits-changed'));
     localStorage.setItem('jiezi-full-report', JSON.stringify({ idea: record.idea, report: record.report }));
     router.push('/app');
   };
@@ -188,6 +432,9 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="text-lg">🌱</span>
             <span className="font-semibold text-gray-900">芥子</span>
+            <span className="hidden sm:inline text-sm text-gray-400 ml-1.5 max-w-[320px] leading-tight">
+              芥子纳须弥，一个小想法里面也蕴藏着伟大的作品
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {userName ? (
@@ -197,6 +444,7 @@ export default function Home() {
                 登录
               </button>
             )}
+            <a href="/app/history" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">历史</a>
             <CreditBadge />
           </div>
         </div>
@@ -224,9 +472,9 @@ export default function Home() {
         </div>
         <div className="max-w-3xl mx-auto px-4 pt-16 sm:pt-20 pb-16 sm:pb-20 text-center relative animate-[fadeIn_0.6s_ease-out]">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-4">
-            从想法
+            从一句话想法
             <br />
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">到产品方案，只需 1 分钟</span>
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">到可落地的产品原型，只需 1 分钟</span>
           </h1>
           <p className="text-gray-500 text-sm max-w-lg mx-auto mb-6 leading-relaxed">
             输入产品想法 → AI 自动验证市场方向、分析竞品、生成 PRD 和产品预览页
@@ -292,122 +540,208 @@ export default function Home() {
               </div>
             )}
 
-            {/* Result */}
+            {/* Result — Summary Card first */}
             {status === 'success' && report && (
               <div className="text-left animate-[fadeIn_0.4s_ease-out]">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">验证报告</h2>
-                  <p className="text-sm text-gray-400">AI 分析结果仅供参考，建议结合你的判断做最终决策</p>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${verdictStyles[report.verdict] || ''}`}>
-                        {report.verdict}
-                      </span>
-                      <span className="text-sm text-amber-500 tracking-wider">
-                        {starRating((report.market_score + report.feasibility_score) / 2)}
-                      </span>
-                      <span className="text-xs text-gray-400">{report.verdict_reason}</span>
-                    </div>
-                  </div>
+                {/* Summary Card */}
+                <SummaryCard report={report} idea={lastIdea} starRating={starRating} verdictStyles={verdictStyles} />
 
-                  {/* Sharp comment */}
-                  {report.sharp_comment && (
-                    <div className="px-5 py-3 border-b border-gray-50">
-                      <div className="flex items-start gap-2 text-sm">
-                        <span className="text-amber-400 shrink-0 mt-0.5">💬</span>
-                        <span className="text-gray-500 italic leading-relaxed">{report.sharp_comment}</span>
-                      </div>
+                {/* 核心结论概览 */}
+                <div ref={fullReportRef} className="mt-8 pt-6 border-t border-gray-100">
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-1">核心结论概览</h2>
+                      <p className="text-sm text-gray-400">AI 分析结果仅供参考，建议结合你的判断做最终决策</p>
                     </div>
-                  )}
-
-                  <div className="px-5 py-3 border-b border-gray-50 flex gap-6 text-sm">
-                    <div>
-                      <span className="text-gray-400">市场</span>{' '}
-                      <span className={`font-semibold ${scoreColor(report.market_score)}`}>{report.market_score}/10</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">可行</span>{' '}
-                      <span className={`font-semibold ${scoreColor(report.feasibility_score)}`}>{report.feasibility_score}/10</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">竞争</span>{' '}
-                      <span className="font-semibold text-gray-700">{report.market_analysis.competition_level}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">需求</span>{' '}
-                      <span className="font-semibold text-gray-700">{report.market_analysis.demand}</span>
-                    </div>
-                  </div>
-
-                  {/* Search evidence */}
-                  {report.competitors && report.competitors.length > 0 && (
-                    <div className="px-5 py-3 border-b border-gray-50">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        AI 搜索发现 {report.competitors.length} 个相关产品
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {report.competitors.slice(0, 4).map((c, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-50 text-gray-500 rounded-md px-2 py-1">
-                            <span className="w-1 h-1 rounded-full bg-blue-300" />
-                            {c.name}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${verdictStyles[report.verdict] || ''}`}>
+                            {report.verdict}
                           </span>
+                          <span className="text-sm text-amber-500 tracking-wider">
+                            {starRating((report.market_score + report.feasibility_score) / 2)}
+                          </span>
+                          <span className="text-xs text-gray-400">{report.verdict_reason}</span>
+                        </div>
+                      </div>
+
+                      {/* AI 灵魂拷问 */}
+                      {report.sharp_comment && (
+                        <div className="mx-5 my-3 bg-amber-50 border border-amber-200/60 rounded-xl overflow-hidden">
+                          <div className="flex">
+                            <div className="w-1 bg-amber-400 shrink-0" />
+                            <div className="flex-1 px-4 py-3">
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <span className="text-base">💡</span>
+                                <span className="text-[10px] font-semibold text-amber-600 tracking-wider uppercase">AI 灵魂拷问</span>
+                              </div>
+                              <p className="text-sm text-amber-900 leading-relaxed">
+                                {report.sharp_comment}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="px-5 py-3 border-b border-gray-50 flex gap-6 text-sm">
+                        <div>
+                          <span className="text-gray-400">市场</span>{' '}
+                          <span className={`font-semibold ${scoreColor(report.market_score)}`}>{report.market_score}/10</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">可行</span>{' '}
+                          <span className={`font-semibold ${scoreColor(report.feasibility_score)}`}>{report.feasibility_score}/10</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">竞争</span>{' '}
+                          <span className="font-semibold text-gray-700">{report.market_analysis.competition_level}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">需求</span>{' '}
+                          <span className="font-semibold text-gray-700">{report.market_analysis.demand}</span>
+                        </div>
+                      </div>
+
+                      {/* Scoring breakdown */}
+                      {report.scoring && (
+                        <div className="px-5 py-3 border-b border-gray-50">
+                          <p className="text-[10px] text-gray-300 uppercase tracking-wider mb-2">评分依据</p>
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            <ScoringItem label="市场规模" value={report.scoring.market_size} color="blue" />
+                            <ScoringItem label="用户需求" value={report.scoring.user_demand} color="blue" />
+                            <ScoringItem label="竞争密度" value={report.scoring.competition_density} color="blue" />
+                            <ScoringItem label="付费潜力" value={report.scoring.monetization_potential} color="blue" />
+                            <ScoringItem label="技术可行" value={report.scoring.tech_feasibility} color="indigo" />
+                            <ScoringItem label="团队成本" value={report.scoring.team_cost} color="indigo" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 竞品调研 */}
+                      {report.competitors && report.competitors.length > 0 && (
+                        <div className="px-5 py-3 border-b border-gray-50">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            AI 搜索发现 {report.competitors.length} 个相关产品
+                          </div>
+                          <div className="space-y-2">
+                            {report.competitors.slice(0, 4).map((c, i) => (
+                              <div key={i} className="flex items-start gap-2.5 bg-gray-50/70 rounded-lg px-3 py-2">
+                                <span className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5">
+                                  {i + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-800">{c.name}</span>
+                                    {c.source_url && (
+                                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:text-blue-600 shrink-0" onClick={e => e.stopPropagation()}>
+                                        ↗
+                                      </a>
+                                    )}
+                                  </div>
+                                  {c.positioning && (
+                                    <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{c.positioning}</p>
+                                  )}
+                                  {c.user_feedback && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <span className="text-[10px] text-gray-400">💬</span>
+                                      <span className="text-[10px] text-gray-400 leading-tight line-clamp-1">{c.user_feedback}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            {report.competitors.length > 4 && (
+                              <p className="text-[10px] text-gray-300 text-center pt-1">
+                                还有 {report.competitors.length - 4} 个相关产品未展示
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="px-5 py-4 space-y-2">
+                        {report.swot.strengths.slice(0, 2).map((s, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                            <span className="text-green-500 mt-0.5 shrink-0">▸</span>
+                            <span>{s}</span>
+                          </div>
                         ))}
-                        {report.competitors.length > 4 && (
-                          <span className="text-xs text-gray-300 self-center">+{report.competitors.length - 4}</span>
-                        )}
+                        {report.swot.opportunities.slice(0, 1).map((o, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                            <span className="text-blue-500 mt-0.5 shrink-0">▸</span>
+                            <span>{o}</span>
+                          </div>
+                        ))}
+                        <div className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-purple-500 mt-0.5 shrink-0">▸</span>
+                          <span>目标用户：{report.target_users}</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
 
-                  <div className="px-5 py-4 space-y-2">
-                    {report.swot.strengths.slice(0, 2).map((s, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                        <span className="text-green-500 mt-0.5 shrink-0">▸</span>
-                        <span>{s}</span>
+                      <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100">
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Reset */}
+                          <button
+                            onClick={handleReset}
+                            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors shrink-0"
+                          >
+                            重新开始
+                          </button>
+
+                          {/* Actions group */}
+                          <div className="flex items-center gap-3">
+                            <div className="relative" ref={shareMenuRef}>
+                              <button
+                                onClick={() => setShowShareMenu(v => !v)}
+                                disabled={sharing}
+                                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                              >
+                                {sharing ? '生成中...' : '分享'}
+                              </button>
+                              {showShareMenu && (
+                                <div className="absolute bottom-full mb-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10">
+                                  <button
+                                    onClick={handleShare}
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                    {shareCopied ? '已复制 ✓' : '复制分享链接'}
+                                  </button>
+                                  <button
+                                    onClick={handleSaveImage}
+                                    disabled={imgSaving}
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors border-t border-gray-100 whitespace-nowrap"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    {imgSaving ? '生成中...' : '保存为图片'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={handleSaveImage}
+                              disabled={imgSaving}
+                              className="flex-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 transition-colors"
+                            >
+                              {imgSaving ? '生成中...' : '下载/导出报告'}
+                            </button>
+                            <button
+                              onClick={handleGoToApp}
+                              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                            >
+                              解锁深度分析
+                              <span className="text-xs text-blue-200 font-normal">(⚡️消耗2积分)</span>
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-center text-[10px] text-gray-300 mt-2 leading-relaxed">
+                          SWOT / PRD / 产品预览页
+                        </p>
                       </div>
-                    ))}
-                    {report.swot.opportunities.slice(0, 1).map((o, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                        <span className="text-blue-500 mt-0.5 shrink-0">▸</span>
-                        <span>{o}</span>
-                      </div>
-                    ))}
-                    <div className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-purple-500 mt-0.5 shrink-0">▸</span>
-                      <span>目标用户：{report.target_users}</span>
                     </div>
                   </div>
-
-                  <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100">
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleShare}
-                        disabled={sharing}
-                        className="flex-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 transition-colors"
-                      >
-                        {sharing ? '生成中...' : '分享'}
-                      </button>
-                      <button
-                        onClick={handleReset}
-                        className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                      >
-                        重新开始
-                      </button>
-                      <button
-                        onClick={handleGoToApp}
-                        className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                      >
-                        查看完整报告 →
-                      </button>
-                    </div>
-                    <p className="text-center text-[10px] text-gray-300 mt-2 leading-relaxed">
-                      查看完整报告 · SWOT / PRD / 产品预览页
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -418,25 +752,6 @@ export default function Home() {
               </div>
             )}
           </div>
-
-          {/* Demo — shown only when idle */}
-          {demoHtml && status === 'idle' && (
-            <div className="max-w-3xl mx-auto mt-16 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm text-left">
-              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                <span className="ml-2 text-xs text-gray-400">芥子 — 产品演示</span>
-              </div>
-              <iframe
-                srcDoc={demoHtml}
-                className="w-full border-0"
-                title="product-demo"
-                style={{ height: '380px' }}
-                sandbox="allow-scripts"
-              />
-            </div>
-          )}
 
           {/* Recent validations — shown only when idle */}
           {status === 'idle' && recentRecords.length > 0 && (
@@ -478,6 +793,25 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Demo — shown only when idle */}
+          {demoHtml && status === 'idle' && (
+            <div className="max-w-3xl mx-auto mt-16 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm text-left">
+              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                <span className="ml-2 text-xs text-gray-400">芥子 — 产品演示</span>
+              </div>
+              <iframe
+                srcDoc={demoHtml}
+                className="w-full border-0"
+                title="product-demo"
+                style={{ height: '380px' }}
+                sandbox="allow-scripts"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -485,11 +819,20 @@ export default function Home() {
         <footer className="border-t border-gray-100 bg-gray-50/30">
           <div className="max-w-3xl mx-auto px-4 py-12 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-lg">🌱</span>
+              <img src="/favicon.svg" alt="" className="w-6 h-6 rounded" />
               <span className="font-semibold text-gray-900">芥子</span>
             </div>
             <div className="text-xs text-gray-400">
               AI 产品想法验证器 · 用 AI 帮你判断哪些方向值得做
+            </div>
+            <div className="mt-4">
+              <a
+                href="/contact"
+                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-emerald-600 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                联系我们
+              </a>
             </div>
             <div className="mt-6 pt-6 border-t border-gray-100 text-xs text-gray-300">
               &copy; {new Date().getFullYear()} 芥子

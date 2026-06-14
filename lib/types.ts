@@ -22,12 +22,29 @@ export interface SWOT {
   threats: string[];
 }
 
+export interface ValidationSummary {
+  market_opportunity: string;
+  tech_difficulty: string;
+  startup_cost: string;
+  payback_period: string;
+  one_liner: string;
+}
+
 export interface ValidationReport {
   verdict: '建议尝试' | '值得探索' | '暂不建议' | '推荐做' | '谨慎做' | '不建议做';
   verdict_reason: string;
   market_score: number;
   feasibility_score: number;
   sharp_comment?: string;
+  summary?: ValidationSummary;
+  scoring?: {
+    market_size: number;
+    user_demand: number;
+    competition_density: number;
+    monetization_potential: number;
+    tech_feasibility: number;
+    team_cost: number;
+  };
   market_analysis: MarketAnalysis;
   competitors: Competitor[];
   swot: SWOT;

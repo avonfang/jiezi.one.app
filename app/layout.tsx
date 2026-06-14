@@ -15,7 +15,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: '芥子 — AI 产品想法验证器',
-  description: '输入你的产品想法，AI 自动验证方向、分析竞品、生成市场报告',
+  description: '「芥子纳须弥」—— 一粒芥子容纳整座须弥山。输入你的产品想法，AI 自动验证方向、分析竞品、生成 PRD 和预览页，帮你判断哪些方向值得做。',
+  icons: {
+    icon: '/favicon.svg',
+  },
+  other: {
+    'theme-color': '#2563eb',
+  },
 };
 
 export default function RootLayout({

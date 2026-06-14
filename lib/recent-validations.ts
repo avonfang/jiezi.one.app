@@ -1,10 +1,8 @@
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import { dataDir } from './data-dir';
+import { kvGet, kvSet } from './kv-store';
 import type { ValidationReport } from './types';
 
+const VALIDATIONS_KEY = 'recent:validations';
 const MAX_RECORDS = 20;
-const FILE = dataDir('recent', 'validations.json');
 
 export interface RecentRecord {
   id: string;
@@ -23,15 +21,7 @@ function generateId(): string {
 }
 
 export async function saveValidation(idea: string, report: ValidationReport): Promise<void> {
-  await mkdir(dataDir('recent'), { recursive: true });
-
-  let records: RecentRecord[] = [];
-  if (existsSync(FILE)) {
-    try {
-      const raw = await readFile(FILE, 'utf-8');
-      records = JSON.parse(raw);
-    } catch { /* ignore */ }
-  }
+  let records = await kvGet<RecentRecord[]>(VALIDATIONS_KEY) || [];
 
   records.unshift({
     id: generateId(),
@@ -46,16 +36,10 @@ export async function saveValidation(idea: string, report: ValidationReport): Pr
   });
 
   if (records.length > MAX_RECORDS) records = records.slice(0, MAX_RECORDS);
-  await writeFile(FILE, JSON.stringify(records), 'utf-8');
+  await kvSet(VALIDATIONS_KEY, records);
 }
 
 export async function getRecentValidations(limit = 10): Promise<RecentRecord[]> {
-  if (!existsSync(FILE)) return [];
-  try {
-    const raw = await readFile(FILE, 'utf-8');
-    const records: RecentRecord[] = JSON.parse(raw);
-    return records.slice(0, limit);
-  } catch {
-    return [];
-  }
+  const records = await kvGet<RecentRecord[]>(VALIDATIONS_KEY);
+  return records ? records.slice(0, limit) : [];
 }

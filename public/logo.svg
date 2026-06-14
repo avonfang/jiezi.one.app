@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <!-- Cosmic background gradient -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="60%" stop-color="#0f0d2e"/>
+      <stop offset="100%" stop-color="#070614"/>
+    </radialGradient>
+    <!-- Seed glow gradient -->
+    <radialGradient id="seedGlow" cx="35%" cy="70%" r="40%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Ring gradient -->
+    <linearGradient id="ring1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#fbbf24" stop-opacity="0.15"/>
+      <stop offset="70%" stop-color="#f59e0b" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ring2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#fbbf24" stop-opacity="0.08"/>
+      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bg)" stroke="#2e1065" stroke-width="1.5"/>
+
+  <!-- Subtle stars scattered in background -->
+  <circle cx="22" cy="28" r="0.6" fill="#a78bfa" opacity="0.6"/>
+  <circle cx="72" cy="22" r="0.5" fill="#c4b5fd" opacity="0.4"/>
+  <circle cx="78" cy="45" r="0.7" fill="#a78bfa" opacity="0.5"/>
+  <circle cx="25" cy="60" r="0.4" fill="#c4b5fd" opacity="0.3"/>
+  <circle cx="68" cy="70" r="0.6" fill="#a78bfa" opacity="0.4"/>
+  <circle cx="35" cy="20" r="0.5" fill="#c4b5fd" opacity="0.35"/>
+  <circle cx="80" cy="65" r="0.4" fill="#a78bfa" opacity="0.25"/>
+  <circle cx="15" cy="42" r="0.5" fill="#c4b5fd" opacity="0.3"/>
+  <circle cx="60" cy="15" r="0.4" fill="#a78bfa" opacity="0.3"/>
+  <circle cx="45" cy="80" r="0.5" fill="#c4b5fd" opacity="0.25"/>
+  <circle cx="85" cy="30" r="0.4" fill="#a78bfa" opacity="0.2"/>
+  <circle cx="18" cy="75" r="0.3" fill="#c4b5fd" opacity="0.2"/>
+
+  <!-- Glow behind seed -->
+  <circle cx="38" cy="68" r="22" fill="url(#seedGlow)"/>
+
+  <!-- Expanding rings (须弥 — the vast universe radiating from the seed) -->
+  <ellipse cx="38" cy="68" rx="12" ry="8" fill="none" stroke="url(#ring1)" stroke-width="0.8" opacity="0.5"/>
+  <ellipse cx="38" cy="68" rx="20" ry="13" fill="none" stroke="url(#ring2)" stroke-width="0.6" opacity="0.35"/>
+  <ellipse cx="38" cy="68" rx="30" ry="19" fill="none" stroke="url(#ring1)" stroke-width="0.4" opacity="0.2"/>
+  <ellipse cx="38" cy="68" rx="42" ry="26" fill="none" stroke="url(#ring2)" stroke-width="0.3" opacity="0.12"/>
+
+  <!-- The seed (芥子 — the small, dense origin) -->
+  <ellipse cx="38" cy="68" rx="3.5" ry="2.5" fill="#fbbf24"/>
+  <ellipse cx="38" cy="68" rx="2.5" ry="1.8" fill="#fcd34d"/>
+  <circle cx="37.5" cy="67.5" r="0.8" fill="#fef3c7" opacity="0.8"/>
+
+  <!-- Outer ring decoration -->
+  <circle cx="50" cy="50" r="45" fill="none" stroke="#4c1d95" stroke-width="0.5" opacity="0.4"/>
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#4c1d95" stroke-width="0.3" opacity="0.2"/>
+</svg>

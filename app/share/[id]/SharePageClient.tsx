@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { ShareData } from '@/lib/types';
+import type { ShareData, ValidationReport } from '@/lib/types';
 
 const VERDICT_COLORS: Record<string, { bg: string; text: string }> = {
   '建议尝试': { bg: 'bg-green-50', text: 'text-green-700' },
@@ -70,14 +70,17 @@ export default function SharePageClient() {
         {/* Header */}
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xs text-gray-300 mr-1">← 返回</span>
             <span>🌱</span> 芥子
           </a>
           <p className="text-xs text-gray-300 mt-2 italic">
             「芥子纳须弥」—— 一粒芥子容纳整座须弥山，一个小想法也能长成一个伟大的作品
           </p>
-          <p className="text-xs text-gray-400 mt-6 mb-1">分享的验证报告</p>
-          <p className="text-lg text-gray-700 leading-relaxed">{data.idea}</p>
+          <p className="text-[10px] text-gray-300 mt-6 mb-2">分享的验证报告</p>
         </div>
+
+        {/* Summary Card */}
+        {r.summary && <SummaryCard report={r} idea={data.idea} />}
 
         {/* Verdict */}
         <div className={`rounded-xl border-2 p-5 ${c.bg}`}>
@@ -121,6 +124,19 @@ export default function SharePageClient() {
               <ScoreBox label="市场前景" score={r.market_score} />
               <ScoreBox label="开发可行性" score={r.feasibility_score} />
             </div>
+            {r.scoring && (
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 text-center">评分依据</p>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <ScoringItem label="市场规模" value={r.scoring.market_size} color="blue" />
+                  <ScoringItem label="用户需求" value={r.scoring.user_demand} color="blue" />
+                  <ScoringItem label="竞争密度" value={r.scoring.competition_density} color="blue" />
+                  <ScoringItem label="付费潜力" value={r.scoring.monetization_potential} color="blue" />
+                  <ScoringItem label="技术可行" value={r.scoring.tech_feasibility} color="indigo" />
+                  <ScoringItem label="团队成本" value={r.scoring.team_cost} color="indigo" />
+                </div>
+              </div>
+            )}
           </Section>
         )}
 
@@ -240,6 +256,70 @@ function ScoreBox({ label, score }: { label: string; score: number }) {
       </div>
       <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full`} style={{ width: `${score * 10}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ScoringItem({ label, value, color }: { label: string; value: number; color: string }) {
+  const dots = '●'.repeat(Math.max(0, Math.min(5, value || 0))) + '○'.repeat(Math.max(0, 5 - Math.min(5, value || 0)));
+  const colorClass = color === 'indigo' ? 'text-indigo-400' : 'text-blue-400';
+  return (
+    <div className="text-center">
+      <p className="text-[10px] text-gray-400 mb-0.5">{label}</p>
+      <p className={`text-xs tracking-wider ${colorClass}`}>{dots}</p>
+    </div>
+  );
+}
+
+function normalizedScore(...scores: number[]): number {
+  const max = Math.max(...scores.filter(n => !isNaN(n)), 0);
+  const avg = scores.reduce((a, b) => a + (isNaN(b) ? 0 : b), 0) / scores.length;
+  return max > 10 ? avg / 10 : avg;
+}
+
+function SummaryCard({ report, idea }: { report: ValidationReport; idea: string }) {
+  const s = report.summary;
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+      <div className="p-6">
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="text-sm">🌱</span>
+          <span className="text-[10px] text-gray-300 font-medium tracking-wider">芥子 · AI 产品验证</span>
+        </div>
+        <p className="text-sm font-medium text-gray-800 leading-relaxed mb-4">{idea}</p>
+        <div className="flex items-center justify-between mb-5">
+          <span className="text-xs font-medium text-gray-400">结论摘要</span>
+          <div className="text-right">
+            <span className="text-lg font-bold text-gray-800">{normalizedScore(report.market_score, report.feasibility_score).toFixed(1)}</span>
+            <span className="text-xs text-gray-400 ml-0.5">/10</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-blue-400 font-medium uppercase tracking-wider mb-1">市场机会</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.market_opportunity || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-purple-400 font-medium uppercase tracking-wider mb-1">技术难度</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.tech_difficulty || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-amber-50 to-amber-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-amber-400 font-medium uppercase tracking-wider mb-1">启动成本</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.startup_cost || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-green-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-green-400 font-medium uppercase tracking-wider mb-1">回本周期</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.payback_period || '-'}</p>
+          </div>
+        </div>
+        {s?.one_liner && (
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-400 mb-1">一句话结论</p>
+            <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{s.one_liner}&rdquo;</p>
+          </div>
+        )}
       </div>
     </div>
   );

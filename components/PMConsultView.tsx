@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { getClientId } from '@/lib/client-id';
 import type { ChatMessage, ValidationReport } from '@/lib/types';
 
 interface PMConsultViewProps {
@@ -31,15 +32,23 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
     try {
       const res = await fetch('/api/pm-consult', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
         body: JSON.stringify({ idea, report, messages: updatedMessages }),
       });
+
+      if (res.status === 402) {
+        window.location.href = '/pricing';
+        return;
+      }
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || '咨询失败');
       }
+
+      // Notify sidebar to refresh credit balance
+      window.dispatchEvent(new CustomEvent('credits-changed'));
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (e) {
@@ -120,6 +129,14 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
         )}
 
         <div ref={bottomRef} />
+      </div>
+
+      {/* Credit notice */}
+      <div className="px-4 pt-2 pb-0">
+        <p className="text-[10px] text-gray-400 flex items-center gap-1">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          每次提问消耗 1 积分
+        </p>
       </div>
 
       {/* Input */}

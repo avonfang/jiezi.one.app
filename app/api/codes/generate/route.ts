@@ -2,9 +2,11 @@ import { NextRequest } from 'next/server';
 import { generateCodes } from '@/lib/codes';
 
 const PLANS: Record<string, { credits: number; label: string }> = {
-  single: { credits: 1, label: '单次验证' },
-  triple: { credits: 3, label: '3 次套餐' },
-  ten: { credits: 10, label: '10 次套餐' },
+  basic: { credits: 7, label: '体验装' },
+  standard: { credits: 15, label: '标准装' },
+  premium: { credits: 35, label: '畅享装' },
+  topup_small: { credits: 3, label: '积分加油包(3积分)' },
+  topup_large: { credits: 5, label: '积分加油包(5积分)' },
 };
 
 export async function POST(request: NextRequest) {

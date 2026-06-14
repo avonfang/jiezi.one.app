@@ -1,256 +1,336 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getClientId } from '@/lib/client-id';
+import QRCode from 'qrcode';
 
 const PLANS = [
   {
-    id: 'single',
-    name: '单次验证',
-    price: '¥4.90',
-    credits: '1 次验证',
+    id: 'basic',
+    name: '体验装',
+    price: '¥6.90',
+    credits: '7 积分',
+    unit_price: '¥0.99/积分',
     popular: false,
-    desc: '试试芥子的验证能力',
+    features: [
+      'AI 市场验证报告',
+      '竞品实时搜索分析',
+      'SWOT 分析',
+      'PRD 文档生成',
+      '产品预览页',
+    ],
   },
   {
-    id: 'triple',
-    name: '3 次套餐',
-    price: '¥9.90',
-    credits: '3 次验证',
+    id: 'standard',
+    name: '标准装',
+    price: '¥12.90',
+    credits: '15 积分',
+    unit_price: '¥0.86/积分',
     popular: true,
-    desc: '验证多个想法，性价比之选',
+    features: [
+      'AI 市场验证报告',
+      '竞品实时搜索分析',
+      'SWOT 分析',
+      'PRD 文档生成',
+      '产品预览页',
+      '积分长期有效',
+    ],
   },
   {
-    id: 'ten',
-    name: '10 次套餐',
-    price: '¥19.90',
-    credits: '10 次验证',
+    id: 'premium',
+    name: '畅享装',
+    price: '¥29.90',
+    credits: '35 积分',
+    unit_price: '¥0.85/积分',
     popular: false,
-    desc: '重度用户首选，单次仅 ¥1.99',
+    features: [
+      'AI 市场验证报告',
+      '竞品实时搜索分析',
+      'SWOT 分析',
+      'PRD 文档生成',
+      '产品预览页',
+      '积分长期有效',
+      '优先生成速度',
+    ],
   },
 ];
 
-function RedeemCodeForm({ onRedeemed }: { onRedeemed: () => void }) {
-  const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+type PaymentState = 'idle' | 'creating' | 'qr' | 'success' | 'error';
 
-  const handleRedeem = async () => {
-    if (code.trim().length < 4) return;
-    setLoading(true);
-    setMsg(null);
-    try {
-      const res = await fetch('/api/codes/redeem', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.trim(), userId: getClientId() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMsg({ ok: true, text: `兑换成功！获得 ${data.credits} 次验证次数 ✨` });
-        setCode('');
-        onRedeemed();
-      } else {
-        setMsg({ ok: false, text: data.error || '兑换失败' });
-      }
-    } catch {
-      setMsg({ ok: false, text: '网络异常' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="max-w-sm mx-auto">
-      <div className="flex gap-2">
-        <input
-          value={code}
-          onChange={e => setCode(e.target.value.toUpperCase())}
-          placeholder="输入激活码（如 JZ-XXXX-XXXX）"
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 uppercase"
-          onKeyDown={e => e.key === 'Enter' && handleRedeem()}
-        />
-        <button
-          onClick={handleRedeem}
-          disabled={code.trim().length < 4 || loading}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? '...' : '兑换'}
-        </button>
-      </div>
-      {msg && (
-        <p className={`text-sm mt-2 text-center ${msg.ok ? 'text-green-600' : 'text-red-500'}`}>{msg.text}</p>
-      )}
-    </div>
-  );
-}
+const PAY_LABEL = '微信';
 
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [transactionId, setTransactionId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const refreshBalance = () => {
+    const userId = getClientId();
+    if (!userId) return;
+    fetch('/api/credits', { headers: { 'x-client-id': userId } })
+      .then(r => r.json()).then(d => setBalance(d.balance)).catch(() => {});
+  };
+
+  useEffect(refreshBalance, []);
 
   useEffect(() => {
-    const userId = getClientId();
-    if (userId) {
-      fetch('/api/credits', { headers: { 'x-client-id': userId } })
-        .then(r => r.json()).then(d => setBalance(d.balance)).catch(() => {});
-    }
+    if (!qrCodeUrl) { setQrDataUrl(null); return; }
+    QRCode.toDataURL(qrCodeUrl, { width: 260, margin: 2 })
+      .then(url => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(null));
+  }, [qrCodeUrl]);
+
+  useEffect(() => {
+    if (paymentState !== 'qr' || !orderId) return;
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/xorpay/query?order_id=${orderId}`);
+        const data = await res.json();
+        if (data.confirmed) {
+          setPaymentState('success');
+          refreshBalance();
+        }
+      } catch { /* ignore */ }
+    }, 3000);
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, [paymentState, orderId]);
+
+  useEffect(() => {
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, []);
 
-  const handleSubmit = async () => {
-    if (!selectedPlan || transactionId.length < 4) return;
-    setSubmitting(true);
+  const handleStartPayment = async (planId?: string) => {
+    const pid = planId || selectedPlan;
+    if (!pid) return;
+    setSelectedPlan(pid);
+    setPaymentState('creating');
     setError('');
-    const userId = getClientId();
+
     try {
-      const res = await fetch('/api/orders/create', {
+      const res = await fetch('/api/xorpay/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: selectedPlan, userId, transactionId }),
+        body: JSON.stringify({ plan: pid, userId: getClientId(), payType: 'native' }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || '提交失败');
-      setSubmitted(true);
+      if (!data.success) throw new Error(data.error || '创建支付失败');
+      setOrderId(data.orderId);
+      setQrCodeUrl(data.qrCode);
+      setPaymentState('qr');
     } catch (e) {
-      setError(e instanceof Error ? e.message : '提交失败');
-    } finally {
-      setSubmitting(false);
+      setError(e instanceof Error ? e.message : '创建支付失败');
+      setPaymentState('error');
     }
   };
 
+  const handleReset = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    setSelectedPlan(null);
+    setPaymentState('idle');
+    setQrCodeUrl(null);
+    setQrDataUrl(null);
+    setOrderId(null);
+    setError('');
+  };
+
+  const selectedPlanData = PLANS.find(p => p.id === selectedPlan);
+
+  const paymentView = (() => {
+    if (!selectedPlan) return null;
+    switch (paymentState) {
+      case 'creating':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-emerald-200 border-t-emerald-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">正在创建支付订单...</p>
+          </div>
+        );
+      case 'qr':
+        return (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-5 text-center text-white">
+              <p className="text-sm font-medium text-white/80">{selectedPlanData?.name}</p>
+              <p className="text-2xl font-bold mt-0.5">{selectedPlanData?.price}</p>
+              <p className="text-xs text-white/60 mt-1">{selectedPlanData?.unit_price}</p>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 mb-2">包含内容</p>
+                <ul className="space-y-1.5">
+                  {selectedPlanData?.features.map((f, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                      <svg className="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="text-center border-t border-gray-50 pt-4">
+                <p className="text-xs text-gray-400 mb-3">{selectedPlanData?.credits} · 付款后自动到账</p>
+                {qrDataUrl ? (
+                  <div className="w-52 h-52 mx-auto bg-white border border-gray-100 rounded-xl p-3 shadow-sm mb-4">
+                    <img src={qrDataUrl} alt="支付二维码" className="w-full h-full" />
+                  </div>
+                ) : (
+                  <div className="w-52 h-52 mx-auto bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center mb-4">
+                    <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-400 animate-spin" />
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mb-4">二维码有效期 2 小时</p>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  等待支付中...
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'success':
+        return (
+          <div className="bg-white border border-emerald-100 rounded-2xl p-8 text-center shadow-sm">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">支付成功</h2>
+            <p className="text-sm text-emerald-600 mb-2">积分已到账，现在可以开始验证产品想法了</p>
+            {balance !== null && (
+              <p className="text-sm text-gray-500 mb-6">当前剩余 <strong>{balance}</strong> 积分</p>
+            )}
+            <div className="flex items-center justify-center gap-3">
+              <a href="/" className="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-2.5 text-sm font-medium text-white hover:from-emerald-600 hover:to-green-600 transition-all shadow-sm">
+                开始验证
+              </a>
+              <button onClick={handleReset} className="rounded-lg border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                继续购买
+              </button>
+            </div>
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <p className="text-red-600 font-medium mb-2">支付创建失败</p>
+            <p className="text-sm text-red-500 mb-4">{error}</p>
+            <button onClick={() => setPaymentState('idle')} className="rounded-lg border border-red-300 px-6 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
+              重新选择
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  })();
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 to-white">
       <div className="max-w-3xl mx-auto px-4 py-16">
-        {/* Header */}
         <div className="text-center mb-4">
-          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 mb-6">
-            <span>🌱</span> 返回芥子
+          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 mb-8">
+            ← 返回
           </a>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">选择验证套餐</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">选择积分套餐</h1>
           <p className="text-gray-500">
-            {balance !== null ? `当前剩余 ${balance} 次验证` : '按次付费，用完为止'}
+            {balance !== null ? `当前剩余 ${balance} 积分` : '按量付费，用完为止'}
           </p>
         </div>
 
-        {/* Balance */}
         {balance !== null && balance > 0 && (
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center mb-8">
-            <p className="text-blue-700">你还有 <strong>{balance}</strong> 次验证次数</p>
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center mb-8 max-w-md mx-auto">
+            <p className="text-emerald-700">你还有 <strong>{balance}</strong> 积分</p>
           </div>
         )}
 
-        {/* Plans */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
           {PLANS.map((plan) => (
-            <button
+            <div
               key={plan.id}
-              onClick={() => { setSelectedPlan(plan.id); setSubmitted(false); setError(''); }}
-              className={`bg-white rounded-xl border-2 p-6 text-left transition-all ${
+              className={`bg-white rounded-xl border-2 p-5 transition-all relative ${
                 selectedPlan === plan.id
-                  ? 'border-blue-400 shadow-lg shadow-blue-100'
-                  : plan.popular ? 'border-gray-200' : 'border-gray-100'
-              } hover:border-blue-300`}
+                  ? 'border-emerald-400 shadow-lg shadow-emerald-100'
+                  : 'border-gray-100'
+              }`}
             >
               {plan.popular && (
-                <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-2">推荐</p>
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[10px] font-semibold px-3 py-0.5 rounded-full shadow-sm">
+                  推荐
+                </div>
               )}
-              <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{plan.price}</p>
-              <p className="text-sm text-gray-500 mt-1">{plan.credits}</p>
-              <p className="text-xs text-gray-400 mt-2">{plan.desc}</p>
-            </button>
+              <div className="text-center pt-1">
+                <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{plan.price}</p>
+                <p className="text-sm text-gray-400 mt-0.5">{plan.credits}</p>
+                <p className="text-xs text-emerald-500 font-medium mt-0.5">{plan.unit_price}</p>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-50">
+                <ul className="space-y-2">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                      <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => handleStartPayment(plan.id)}
+                className={`w-full mt-4 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                  plan.popular
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 shadow-sm'
+                    : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                立即购买
+              </button>
+            </div>
           ))}
         </div>
 
-        {/* Payment section */}
-        {selectedPlan && !submitted && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-md mx-auto">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center">扫码支付</h2>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 text-center">
-              <p className="text-sm text-gray-500 mb-3">
-                请用微信 / 支付宝扫描下方二维码支付
-                <span className="font-semibold text-gray-700"> {PLANS.find(p => p.id === selectedPlan)?.price}</span>
-              </p>
-              {/* QR Code placeholder */}
-              <div className="w-48 h-48 mx-auto bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                <img
-                  src="/payment-qrcode.png"
-                  alt="收款二维码"
-                  className="w-44 h-44 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLImageElement).parentElement!.innerHTML = '<p class="text-xs text-gray-400">请将你的<br>收款二维码<br>保存为<br>public/payment-qrcode.png</p>';
-                  }}
-                />
-              </div>
+        {/* 积分加油包 */}
+        <div className="max-w-lg mx-auto mb-8">
+          <div className="bg-white rounded-xl border-2 border-amber-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-lg">⛽</span>
+              <h3 className="text-base font-semibold text-gray-900">积分加油包</h3>
+              <span className="text-[10px] text-amber-500 font-medium bg-amber-50 px-2 py-0.5 rounded-full">灵活补充</span>
             </div>
-
-            {/* Transaction ID input */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                交易单号后 4 位
-              </label>
-              <input
-                value={transactionId}
-                onChange={e => setTransactionId(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="输入你支付账单中的单号后 4 位数字"
-                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                方便我核对你的付款，在微信/支付宝账单里可以找到
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleStartPayment('topup_small')}
+                className="border border-amber-200 rounded-xl p-4 text-center hover:bg-amber-50 transition-colors"
+              >
+                <p className="text-2xl font-bold text-gray-900">¥2.90</p>
+                <p className="text-sm text-amber-600 font-medium mt-1">3 积分</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">¥0.97/积分</p>
+              </button>
+              <button
+                onClick={() => handleStartPayment('topup_large')}
+                className="border border-amber-300 bg-amber-50/30 rounded-xl p-4 text-center hover:bg-amber-50 transition-colors"
+              >
+                <p className="text-2xl font-bold text-gray-900">¥3.90</p>
+                <p className="text-sm text-amber-600 font-medium mt-1">5 积分</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">¥0.78/积分</p>
+              </button>
             </div>
+          </div>
+        </div>
 
-            {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
-
-            <button
-              onClick={handleSubmit}
-              disabled={transactionId.length < 4 || submitting}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? '提交中...' : '我已付款，确认提交'}
-            </button>
+        {selectedPlan && (
+          <div className="max-w-sm mx-auto">
+            {paymentView}
           </div>
         )}
 
-        {/* Success */}
-        {submitted && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6 max-w-md mx-auto text-center">
-            <p className="text-green-700 font-medium mb-2">提交成功 ✨</p>
-            <p className="text-sm text-green-600 mb-4">
-              我核对到账后会为你充值，通常在几分钟内完成。
-              <br />
-              如有问题，可以再次提交或联系我。
-            </p>
-            <button
-              onClick={() => { setSelectedPlan(null); setTransactionId(''); setSubmitted(false); }}
-              className="rounded-lg border border-green-300 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition-colors"
-            >
-              继续选择套餐
-            </button>
-          </div>
-        )}
-
-        {/* Activation code */}
-        <div className="border-t border-gray-200 pt-8 mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 text-center mb-2">已有激活码？</h2>
-          <p className="text-sm text-gray-500 text-center mb-4">输入激活码，立即获得验证次数</p>
-          <RedeemCodeForm onRedeemed={() => {
-            const userId = getClientId();
-            fetch('/api/credits', { headers: { 'x-client-id': userId } })
-              .then(r => r.json()).then(d => setBalance(d.balance)).catch(() => {});
-          }} />
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 space-y-2 text-sm text-gray-400">
-          <p>支付方式：微信 / 支付宝</p>
-          <p>到账后立即可用，不限使用期限</p>
-        </div>
       </div>
     </div>
   );

@@ -7,10 +7,9 @@ import ReportView from '@/components/ReportView';
 import PRDView from '@/components/PRDView';
 import PreviewView from '@/components/PreviewView';
 import PMConsultView from '@/components/PMConsultView';
+import SummaryView from '@/components/SummaryView';
 import HistoryPanel from '@/components/HistoryPanel';
-import CreditBadge from '@/components/CreditBadge';
-import AuthModal from '@/components/AuthModal';
-import { getClientId, getUsername } from '@/lib/client-id';
+import { getClientId } from '@/lib/client-id';
 import type { ValidationReport, PRD, PreviewPage, AppStatus, HistoryItem } from '@/lib/types';
 
 const SAMPLE_IDEAS = [
@@ -30,6 +29,7 @@ export default function AppPage() {
   const [prdLoading, setPrdLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewPage | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [view, setView] = useState<'summary' | 'report' | 'prd' | 'preview'>('report');
   const [showPMConsult, setShowPMConsult] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sharing, setSharing] = useState(false);
@@ -43,11 +43,8 @@ export default function AppPage() {
   const [prdProgress, setPrdProgress] = useState('');
   const [previewProgress, setPreviewProgress] = useState('');
   const [stalled, setStalled] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    setUserName(getUsername());
     // Restore report from homepage
     const saved = localStorage.getItem('jiezi-full-report');
     if (saved) {
@@ -57,11 +54,16 @@ export default function AppPage() {
           setIdea(savedIdea);
           setReport(savedReport);
           setStatus('success');
-          localStorage.removeItem('jiezi-full-report');
         }
       } catch { /* ignore */ }
     }
   }, []);
+  // Persist report so navigating back preserves it
+  useEffect(() => {
+    if (idea && report) {
+      localStorage.setItem('jiezi-full-report', JSON.stringify({ idea, report }));
+    }
+  }, [idea, report]);
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -132,6 +134,7 @@ export default function AppPage() {
     setPrd(item.prd || null);
     setPreview(item.preview || null);
     setStatus('success');
+    setView('summary');
     setShowPMConsult(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -166,6 +169,10 @@ export default function AppPage() {
     setStatus('loading');
     setError('');
     setIdea(text);
+    setReport(null);
+    setPrd(null);
+    setPreview(null);
+    setView('report');
     setLoadingStage('extracting');
     setStreamTokens('');
     const clientId = getClientId();
@@ -213,6 +220,7 @@ export default function AppPage() {
             } else if (event.type === 'result') {
               setReport(event.report);
               setStatus('success');
+              setView('summary');
               saveToHistory(event.report);
             } else if (event.type === 'error') {
               throw new Error(event.message);
@@ -247,9 +255,14 @@ export default function AppPage() {
     try {
       const res = await fetch('/api/generate-prd', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
         body: JSON.stringify({ idea, report }),
       });
+
+      if (res.status === 402) {
+        window.location.href = '/pricing';
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -279,6 +292,8 @@ export default function AppPage() {
               setPrdProgress(event.message);
             } else if (event.type === 'result') {
               setPrd(event.prd);
+              setView('prd');
+              window.dispatchEvent(new CustomEvent('credits-changed'));
             } else if (event.type === 'error') {
               throw new Error(event.message);
             }
@@ -312,9 +327,14 @@ export default function AppPage() {
     try {
       const res = await fetch('/api/generate-preview', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
         body: JSON.stringify({ prd }),
       });
+
+      if (res.status === 402) {
+        window.location.href = '/pricing';
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -344,6 +364,8 @@ export default function AppPage() {
               setPreviewProgress(event.message);
             } else if (event.type === 'result') {
               setPreview(event.preview);
+              setView('preview');
+              window.dispatchEvent(new CustomEvent('credits-changed'));
             } else if (event.type === 'error') {
               throw new Error(event.message);
             }
@@ -373,29 +395,79 @@ export default function AppPage() {
     setReport(null);
     setPrd(null);
     setPreview(null);
+    setView('report');
     setError('');
     setSampleIdea('');
     setShowPMConsult(false);
   };
 
   const handleBackToReport = () => {
-    setPrd(null);
-    setPreview(null);
+    setView('report');
+  };
+
+  const handleBackToPrd = () => {
+    setView('prd');
+  };
+
+  const handleViewPreview = () => {
+    setView('preview');
+  };
+
+  const handleViewPrd = async () => {
+    const res = await fetch('/api/unlock-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-client-id': getClientId() },
+    });
+    if (res.status === 402) {
+      window.location.href = '/pricing';
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('credits-changed'));
+    setView('prd');
   };
 
   // Preview view
-  if (preview) {
+  if (view === 'preview' && preview) {
     return (
-      <SimpleLayout>
-        <PreviewView preview={preview} onBack={handleBackToReport} />
-      </SimpleLayout>
+      <PreviewView
+        preview={preview}
+        onBack={handleBackToPrd}
+        onRegenerate={handleGeneratePreview}
+        regenerateLoading={previewLoading}
+        onShare={handleShare}
+        sharing={sharing}
+      />
+    );
+  }
+
+  // Summary view
+  if (view === 'summary' && report) {
+    return (
+      <section className="flex-1">
+        <div className="max-w-2xl mx-auto px-4 py-16">
+          <SummaryView
+            report={report}
+            idea={idea}
+            onViewReport={() => setView('report')}
+            onGeneratePrd={prd ? undefined : handleGeneratePrd}
+            prdLoading={prdLoading}
+            onPmConsult={() => setShowPMConsult(v => !v)}
+            onReset={handleReset}
+          />
+          {showPMConsult && (
+            <div className="mt-6">
+              <PMConsultView idea={idea} report={report} />
+            </div>
+          )}
+        </div>
+      </section>
     );
   }
 
   // PRD view
-  if (prd) {
+  if (view === 'prd' && prd) {
     return (
-      <SimpleLayout loading={previewLoading} progress={previewProgress} stage={previewStage}>
+      <>
         <PRDView
           prd={prd}
           onBack={handleBackToReport}
@@ -403,46 +475,34 @@ export default function AppPage() {
           previewLoading={previewLoading}
           onShare={handleShare}
           sharing={sharing}
+          hasPreview={preview !== null}
+          onViewPreview={handleViewPreview}
         />
-      </SimpleLayout>
+        {previewLoading && (
+          <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+            <LoadingState
+              stage={previewStage}
+              message={previewProgress}
+              showTagline
+              steps={[
+                { stage: 'designing', label: '设计页面布局' },
+                { stage: 'writing', label: '生成预览页面' },
+              ]}
+            />
+            {stalled && (
+              <p className="text-xs text-amber-500 animate-pulse flex items-center gap-1.5 mt-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                AI 正在精心设计页面...
+              </p>
+            )}
+          </div>
+        )}
+      </>
     );
   }
 
   return (
-    <main className="flex-1 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            <span className="text-lg">🌱</span>
-            <span className="font-semibold text-gray-900">芥子</span>
-          </a>
-          <div className="flex items-center gap-2">
-            {userName ? (
-              <span className="text-xs text-gray-400 hidden sm:inline">{userName}</span>
-            ) : (
-              <button onClick={() => setShowAuth(true)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                登录
-              </button>
-            )}
-            <CreditBadge />
-          </div>
-        </div>
-      </header>
-
-      {/* Auth modal */}
-      {showAuth && (
-        <AuthModal
-          onClose={() => setShowAuth(false)}
-          onAuth={() => {
-            setShowAuth(false);
-            setUserName(getUsername());
-          }}
-          anonymousId={getClientId()}
-        />
-      )}
-
-      {/* Main content */}
+    <>
       <section className="flex-1">
         <div className="max-w-2xl mx-auto px-4 py-16">
           {status === 'idle' && (
@@ -470,7 +530,7 @@ export default function AppPage() {
             </>
           )}
 
-          {status === 'loading' && <LoadingState stage={loadingStage} message={loadingMessage} />}
+          {status === 'loading' && <LoadingState stage={loadingStage} message={loadingMessage} showTagline />}
 
           {status === 'success' && report && (
             <>
@@ -487,6 +547,7 @@ export default function AppPage() {
                 pmConsultOpen={showPMConsult}
                 onShare={handleShare}
                 sharing={sharing}
+                onViewPrd={prd ? handleViewPrd : undefined}
               />
               {showPMConsult && (
                 <div className="mt-6">
@@ -539,22 +600,6 @@ export default function AppPage() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 bg-gray-50/30">
-        <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-lg">🌱</span>
-            <span className="font-semibold text-gray-900">芥子</span>
-          </div>
-          <div className="text-xs text-gray-400">
-            AI 产品想法验证器 · 用 AI 帮你判断哪些方向值得做
-          </div>
-          <div className="mt-6 pt-6 border-t border-gray-100 text-xs text-gray-300">
-            &copy; {new Date().getFullYear()} 芥子
-          </div>
-        </div>
-      </footer>
-
       {/* Loading overlay for PRD / Preview generation */}
       {prdLoading && (
         <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
@@ -562,6 +607,7 @@ export default function AppPage() {
             <LoadingState
               stage={prdStage}
               message={prdProgress}
+              showTagline
               steps={[
                 { stage: 'analyzing', label: '分析验证报告' },
                 { stage: 'writing', label: '生成 PRD 文档' },
@@ -582,6 +628,7 @@ export default function AppPage() {
             <LoadingState
               stage={previewStage}
               message={previewProgress}
+              showTagline
               steps={[
                 { stage: 'designing', label: '设计页面布局' },
                 { stage: 'writing', label: '生成预览页面' },
@@ -596,83 +643,6 @@ export default function AppPage() {
           </div>
         </div>
       )}
-    </main>
-  );
-}
-
-function SimpleLayout({ children, loading, progress, stage }: { children: React.ReactNode; loading?: boolean; progress?: string; stage?: string }) {
-  const [showAuth, setShowAuth] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [stalled, setStalled] = useState(false);
-
-  useEffect(() => {
-    setUserName(getUsername());
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      setStalled(false);
-      return;
-    }
-    setStalled(false);
-    const timer = setTimeout(() => setStalled(true), 5000);
-    return () => clearTimeout(timer);
-  }, [loading, progress]);
-
-  return (
-    <main className="flex-1 flex flex-col">
-      <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            <span className="text-lg">🌱</span>
-            <span className="font-semibold text-gray-900">芥子</span>
-          </a>
-          <div className="flex items-center gap-2">
-            {userName ? (
-              <span className="text-xs text-gray-400 hidden sm:inline">{userName}</span>
-            ) : (
-              <button onClick={() => setShowAuth(true)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                登录
-              </button>
-            )}
-            <CreditBadge />
-          </div>
-        </div>
-      </header>
-
-      {showAuth && (
-        <AuthModal
-          onClose={() => setShowAuth(false)}
-          onAuth={() => {
-            setShowAuth(false);
-            setUserName(getUsername());
-          }}
-          anonymousId={getClientId()}
-        />
-      )}
-      <div className="flex-1 flex flex-col px-4 py-12">
-        <div className="max-w-4xl mx-auto w-full">{children}</div>
-      </div>
-      {loading && (
-        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center">
-            <LoadingState
-              stage={stage || 'designing'}
-              message={progress || ''}
-              steps={[
-                { stage: 'designing', label: '设计页面布局' },
-                { stage: 'writing', label: '生成预览页面' },
-              ]}
-            />
-            {stalled && (
-              <p className="text-xs text-amber-500 animate-pulse flex items-center gap-1.5 mt-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                AI 正在精心设计页面...
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-    </main>
+    </>
   );
 }

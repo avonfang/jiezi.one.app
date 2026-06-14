@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>芥子 — 产品演示</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; }
+
+  .scene { display: none; animation: fadeInUp 0.8s ease-out; }
+  .scene.active { display: flex; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+
+  @keyframes pulse-dot {
+    0%, 80%, 100% { transform: scale(0); opacity: 0; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes progressFill {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .typing-text {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid #3b82f6;
+    animation: typing 2.5s steps(30, end) forwards, blink 0.8s step-end 3;
+    max-width: fit-content;
+  }
+
+  .slide-item { opacity: 0; transform: translateY(15px); }
+  .slide-item.show { animation: slideUp 0.5s ease-out forwards; }
+
+  .dot-pulse span {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #3b82f6;
+    margin: 0 3px;
+    animation: pulse-dot 1.4s ease-in-out infinite both;
+  }
+  .dot-pulse span:nth-child(1) { animation-delay: 0s; }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.16s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.32s; }
+
+  .progress-bar { animation: progressFill 2s ease-out forwards; }
+
+  .card-pop { animation: fadeInScale 0.6s ease-out forwards; }
+
+  .shimmer-bg {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🌱</span>
+        <span class="font-semibold text-gray-900">芥子</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-gray-400">
+        <span class="w-2 h-2 rounded-full bg-green-400"></span>
+        产品演示
+      </div>
+    </div>
+  </header>
+
+  <!-- Demo container -->
+  <div class="flex-1 flex items-center justify-center px-4 py-12">
+    <div class="max-w-2xl w-full">
+
+      <!-- Progress indicator -->
+      <div class="flex items-center justify-center gap-2 mb-8">
+        <span class="w-2 h-2 rounded-full bg-blue-500" id="dot1"></span>
+        <span class="w-2 h-2 rounded-full bg-gray-300" id="dot2"></span>
+        <span class="w-2 h-2 rounded-full bg-gray-300" id="dot3"></span>
+        <span class="w-2 h-2 rounded-full bg-gray-300" id="dot4"></span>
+      </div>
+
+      <!-- Scene 1: 输入想法 -->
+      <div class="scene active flex-col items-center text-center" id="scene1">
+        <div class="text-sm text-gray-400 mb-3 font-medium tracking-wide">STEP 1/4</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">输入你的产品想法</h2>
+        <p class="text-gray-500 mb-8">用中文描述你的想法，几句话即可</p>
+        <div class="w-full max-w-lg bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-600 font-bold">💡</div>
+            <span class="text-xs text-gray-400">你的产品想法</span>
+          </div>
+          <div class="bg-gray-50 rounded-lg px-4 py-3 text-left">
+            <span class="text-gray-700 typing-text">我想做一个 AI 记账本，自动识别微信和支付宝账单...</span>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <span class="text-xs text-gray-400 bg-gray-50 rounded-full px-3 py-1">0/200</span>
+          </div>
+        </div>
+        <div class="mt-6 opacity-0" id="scene1-cta">
+          <span class="inline-flex items-center gap-1 text-sm text-blue-500">
+            按下回车，AI 开始分析
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <!-- Scene 2: AI验证 -->
+      <div class="scene flex-col items-center text-center" id="scene2">
+        <div class="text-sm text-gray-400 mb-3 font-medium tracking-wide">STEP 2/4</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">AI 正在验证你的想法</h2>
+        <p class="text-gray-500 mb-8">搜索分析竞品和市场数据</p>
+        <div class="w-full max-w-lg">
+          <!-- Loading card -->
+          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </div>
+              <div class="text-left">
+                <p class="text-sm font-medium text-gray-900">正在搜索分析...</p>
+                <p class="text-xs text-gray-400" id="loading-status">提取关键词中</p>
+              </div>
+            </div>
+            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full progress-bar" style="width: 0%" id="progress-bar"></div>
+            </div>
+            <div class="flex items-center justify-center gap-1 mt-3 dot-pulse">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <!-- Result card (shows after) -->
+          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hidden" id="result-card">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-xs text-gray-400">分析结果</p>
+                <p class="text-sm font-medium text-gray-900">AI 记账本</p>
+              </div>
+              <span class="text-xs bg-green-50 text-green-700 rounded-full px-3 py-1 font-medium">推荐做</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-gray-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-gray-400 mb-1">市场前景</p>
+                <p class="text-lg font-bold text-gray-900">82</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-gray-400 mb-1">开发可行性</p>
+                <p class="text-lg font-bold text-gray-900">75</p>
+              </div>
+            </div>
+            <div class="text-left">
+              <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <span class="text-gray-400">📊</span> 竞品数量：12 个
+              </div>
+              <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <span class="text-gray-400">📈</span> 市场需求：高
+              </div>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <span class="text-gray-400">⚡</span> 竞争程度：中等
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: PRD -->
+      <div class="scene flex-col items-center text-center" id="scene3">
+        <div class="text-sm text-gray-400 mb-3 font-medium tracking-wide">STEP 3/4</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">生成产品需求文档</h2>
+        <p class="text-gray-500 mb-8">AI 自动生成结构化 PRD</p>
+        <div class="w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="bg-gray-50 px-5 py-3 border-b border-gray-100 text-left">
+            <h3 class="text-sm font-semibold text-gray-900">PRD · AI 记账本</h3>
+            <p class="text-xs text-gray-400">v1.0</p>
+          </div>
+          <div class="p-5 text-left space-y-4">
+            <div class="slide-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium">P0</span>
+                <span class="text-sm font-medium text-gray-900">自动识别账单</span>
+              </div>
+              <p class="text-xs text-gray-500 ml-1">支持微信 / 支付宝账单截图导入，OCR 自动识别</p>
+            </div>
+            <div class="slide-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium">P0</span>
+                <span class="text-sm font-medium text-gray-900">消费分类统计</span>
+              </div>
+              <p class="text-xs text-gray-500 ml-1">按月 / 按类别自动汇总消费数据</p>
+            </div>
+            <div class="slide-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs bg-yellow-100 text-yellow-700 rounded-full px-2 py-0.5 font-medium">P1</span>
+                <span class="text-sm font-medium text-gray-900">月度分析报告</span>
+              </div>
+              <p class="text-xs text-gray-500 ml-1">AI 生成每月消费洞察和预算建议</p>
+            </div>
+            <div class="slide-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs bg-yellow-100 text-yellow-700 rounded-full px-2 py-0.5 font-medium">P1</span>
+                <span class="text-sm font-medium text-gray-900">多账户管理</span>
+              </div>
+              <p class="text-xs text-gray-500 ml-1">支持家庭多成员账单合并分析</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 4: 预览页 -->
+      <div class="scene flex-col items-center text-center" id="scene4">
+        <div class="text-sm text-gray-400 mb-3 font-medium tracking-wide">STEP 4/4</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">生成产品预览页</h2>
+        <p class="text-gray-500 mb-8">一个可直接使用的产品 Landing Page</p>
+        <div class="w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+            <span class="ml-2 text-xs text-gray-400">AI 记账本 · 预览</span>
+          </div>
+          <div class="p-5">
+            <!-- Mock landing page -->
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-5 text-white text-left">
+              <p class="text-xs text-blue-100 mb-1">AI 记账本</p>
+              <p class="text-lg font-bold mb-3">你的智能财务管家</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2 text-sm text-blue-50">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  自动识别微信 / 支付宝账单
+                </div>
+                <div class="flex items-center gap-2 text-sm text-blue-50">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  AI 智能消费分类
+                </div>
+                <div class="flex items-center gap-2 text-sm text-blue-50">
+                  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  月度预算建议
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 flex justify-center">
+              <span class="inline-block bg-blue-600 text-white text-xs font-medium rounded-lg px-6 py-2">免费开始使用</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 opacity-0" id="scene4-cta">
+          <p class="text-sm text-gray-400 mb-3">这就是芥子为你生成的全部内容</p>
+          <a href="/" class="inline-block rounded-xl bg-blue-600 px-8 py-3 text-sm font-medium text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
+            免费开始使用
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-100 py-4 text-center text-xs text-gray-400">
+    芥子 · AI 产品想法验证器
+  </footer>
+
+  <script>
+    const scenes = [
+      { id: 'scene1', duration: 4500 },
+      { id: 'scene2', duration: 5000 },
+      { id: 'scene3', duration: 5000 },
+      { id: 'scene4', duration: 6000 },
+    ];
+
+    let currentScene = 0;
+    const dots = [1,2,3,4].map(i => document.getElementById(`dot${i}`));
+
+    function showScene(index) {
+      // Hide all scenes
+      document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+
+      // Show target scene
+      const scene = document.getElementById(scenes[index].id);
+      scene.classList.add('active');
+
+      // Update dots
+      dots.forEach((dot, i) => {
+        dot.className = `w-2 h-2 rounded-full ${i <= index ? 'bg-blue-500' : 'bg-gray-300'}`;
+      });
+
+      // Scene-specific animations
+      if (index === 0) {
+        // Scene 1: show CTA after typing
+        setTimeout(() => {
+          const cta = document.getElementById('scene1-cta');
+          if (cta) cta.style.animation = 'fadeInUp 0.5s ease-out forwards';
+        }, 3000);
+      }
+
+      if (index === 1) {
+        // Scene 2: simulate progress
+        const status = document.getElementById('loading-status');
+        const bar = document.getElementById('progress-bar');
+        const resultCard = document.getElementById('result-card');
+
+        setTimeout(() => { if(status) status.textContent = '搜索竞品中'; }, 500);
+        setTimeout(() => { if(status) status.textContent = '分析市场数据'; }, 1500);
+        setTimeout(() => { if(status) status.textContent = '生成验证报告'; }, 2800);
+        setTimeout(() => {
+          if (bar) bar.style.width = '100%';
+        }, 100);
+        // Show result card
+        setTimeout(() => {
+          if (resultCard) {
+            resultCard.classList.remove('hidden');
+            resultCard.style.animation = 'fadeInScale 0.6s ease-out forwards';
+          }
+        }, 3800);
+      }
+
+      if (index === 2) {
+        // Scene 3: staggered slide in of PRD items
+        const items = document.querySelectorAll('#scene3 .slide-item');
+        items.forEach((item, i) => {
+          setTimeout(() => {
+            item.classList.add('show');
+          }, 500 + i * 600);
+        });
+      }
+
+      if (index === 3) {
+        // Scene 4: show CTA
+        setTimeout(() => {
+          const cta = document.getElementById('scene4-cta');
+          if (cta) cta.style.animation = 'fadeInUp 0.5s ease-out forwards';
+        }, 3000);
+      }
+    }
+
+    // Start
+    showScene(0);
+
+    // Auto advance
+    function nextScene() {
+      currentScene++;
+      if (currentScene >= scenes.length) {
+        currentScene = 0;
+      }
+      showScene(currentScene);
+    }
+
+    let timer = setInterval(nextScene, scenes[currentScene].duration);
+
+    // Override interval with per-scene timing
+    const originalNext = nextScene;
+    const sceneTimers = scenes.map(s => s.duration);
+
+    // Recalculate: after showing scene, set timeout for its duration
+    function startAutoPlay() {
+      let i = 0;
+      function playNext() {
+        i++;
+        if (i >= scenes.length) i = 0;
+        showScene(i);
+        setTimeout(playNext, scenes[i].duration);
+      }
+      // First scene already showing, schedule next
+      setTimeout(() => {
+        showScene(1);
+        setTimeout(() => {
+          showScene(2);
+          setTimeout(() => {
+            showScene(3);
+            setTimeout(() => {
+              // Loop back
+              currentScene = 0;
+              clearInterval(timer);
+              startAutoPlay();
+            }, scenes[3].duration);
+          }, scenes[2].duration);
+        }, scenes[1].duration);
+      }, scenes[0].duration);
+    }
+
+    // Replace the interval-based approach with chain
+    clearInterval(timer);
+    setTimeout(() => {
+      showScene(1);
+      setTimeout(() => {
+        showScene(2);
+        setTimeout(() => {
+          showScene(3);
+          setTimeout(() => {
+            // Restart from beginning
+            showScene(0);
+            // Full restart
+            setTimeout(() => {
+              showScene(1);
+              setTimeout(() => {
+                showScene(2);
+                setTimeout(() => {
+                  showScene(3);
+                  setTimeout(() => {
+                    showScene(0);
+                    // Keep looping...
+                    (function loop() {
+                      setTimeout(() => {
+                        showScene(1);
+                        setTimeout(() => {
+                          showScene(2);
+                          setTimeout(() => {
+                            showScene(3);
+                            setTimeout(() => {
+                              showScene(0);
+                              loop();
+                            }, 4000);
+                          }, 5000);
+                        }, 5000);
+                      }, 4500);
+                    })();
+                  }, 4000);
+                }, 5000);
+              }, 5000);
+            }, 4500);
+          }, 4000);
+        }, 5000);
+      }, 5000);
+    }, 4500);
+  </script>
+</body>
+</html>

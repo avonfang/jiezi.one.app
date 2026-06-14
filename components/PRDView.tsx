@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { PRD } from '@/lib/types';
+import { getClientId } from '@/lib/client-id';
 
 interface PRDViewProps {
   prd: PRD;
@@ -10,6 +11,8 @@ interface PRDViewProps {
   previewLoading?: boolean;
   onShare?: () => void;
   sharing?: boolean;
+  hasPreview?: boolean;
+  onViewPreview?: () => void;
 }
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -24,9 +27,20 @@ const PRIORITY_STYLES: Record<string, string> = {
   P2: 'bg-gray-50 text-gray-500 border-gray-200',
 };
 
-export default function PRDView({ prd, onBack, onGeneratePreview, previewLoading, onShare, sharing }: PRDViewProps) {
+export default function PRDView({ prd, onBack, onGeneratePreview, previewLoading, onShare, sharing, hasPreview, onViewPreview }: PRDViewProps) {
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cid = getClientId();
+    if (cid) {
+      fetch('/api/credits', { headers: { 'x-client-id': cid } })
+        .then(r => r.json())
+        .then(d => setBalance(d.balance))
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -221,50 +235,80 @@ ${prd.next_steps ? `<h2>下一步行动</h2><p style="line-height:1.6;">${prd.ne
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-3 pt-4 flex-wrap">
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setShowDownloadMenu(v => !v)}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
-          >
-            下载文件
-            <svg className={`w-3.5 h-3.5 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-          </button>
-          {showDownloadMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px]">
-              <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                导出为 PDF
+      <div className="flex items-center justify-between pt-4 flex-wrap gap-3">
+        {/* Back — leftmost */}
+        <button
+          onClick={onBack}
+          className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          返回验证报告
+        </button>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-3">
+          {/* Download */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowDownloadMenu(v => !v)}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+            >
+              下载文件
+              <svg className={`w-3.5 h-3.5 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {showDownloadMenu && (
+              <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px]">
+                <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  导出为 PDF
+                </button>
+                <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                  导出为 Markdown
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Share */}
+          {onShare && (
+            <button
+              onClick={onShare}
+              disabled={sharing}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
+              {sharing ? '生成链接...' : '分享'}
+            </button>
+          )}
+
+          {/* Preview */}
+          {hasPreview && onViewPreview ? (
+            <button
+              onClick={onViewPreview}
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>
+              查看产品预览
+            </button>
+          ) : onGeneratePreview && (
+            <div className="relative group">
+              <button
+                onClick={balance !== null && balance < 3 ? () => window.location.href = '/pricing' : onGeneratePreview}
+                disabled={previewLoading}
+                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>
+                {previewLoading ? '生成中...' : balance !== null && balance < 3 ? '积分不足，去充值' : <>生成产品预览页<span className="text-amber-300">（⚡️消耗3积分）</span></>}
               </button>
-              <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
-                导出为 Markdown
-              </button>
+              {/* Tooltip when credits insufficient */}
+              {balance !== null && balance < 3 && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                  当前余额 {balance} 分，需要 3 分
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              )}
             </div>
           )}
         </div>
-        {onShare && (
-          <button
-            onClick={onShare}
-            disabled={sharing}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
-            {sharing ? '生成链接...' : '分享'}
-          </button>
-        )}
-        {onGeneratePreview && (
-          <button
-            onClick={onGeneratePreview}
-            disabled={previewLoading}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-          >
-            {previewLoading ? '生成中...' : '生成产品预览页'}
-          </button>
-        )}
-        <button
-          onClick={onBack}
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          返回验证报告
-        </button>
       </div>
     </div>
   );

@@ -2,9 +2,11 @@ import { NextRequest } from 'next/server';
 import { createOrder } from '@/lib/orders';
 
 const PLANS: Record<string, { credits: number; price: string }> = {
-  single: { credits: 1, price: '¥4.90' },
-  triple: { credits: 3, price: '¥9.90' },
-  ten: { credits: 10, price: '¥19.90' },
+  basic: { credits: 7, price: '¥6.90' },
+  standard: { credits: 15, price: '¥12.90' },
+  premium: { credits: 35, price: '¥29.90' },
+  topup_small: { credits: 3, price: '¥2.90' },
+  topup_large: { credits: 5, price: '¥3.90' },
 };
 
 export async function POST(request: NextRequest) {

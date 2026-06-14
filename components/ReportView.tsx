@@ -5,6 +5,7 @@ import type { ValidationReport } from '@/lib/types';
 
 interface ReportViewProps {
   report: ValidationReport;
+  idea?: string;
   onReset: () => void;
   onGeneratePrd?: () => void;
   prdLoading?: boolean;
@@ -12,6 +13,7 @@ interface ReportViewProps {
   pmConsultOpen?: boolean;
   onShare?: () => void;
   sharing?: boolean;
+  onViewPrd?: () => void;
 }
 
 const VERDICT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -37,7 +39,7 @@ function starRating(avg: number): string {
   return '★'.repeat(Math.min(full, 5)) + '☆'.repeat(Math.max(5 - full, 0));
 }
 
-export default function ReportView({ report, onReset, onGeneratePrd, prdLoading, onPmConsult, pmConsultOpen, onShare, sharing }: ReportViewProps) {
+export default function ReportView({ report, idea, onReset, onGeneratePrd, prdLoading, onPmConsult, pmConsultOpen, onShare, sharing, onViewPrd }: ReportViewProps) {
   const verdictStyle = VERDICT_STYLES[report.verdict] || VERDICT_STYLES['值得探索'];
   const verdictIcon = VERDICT_ICONS[report.verdict] || '🟡';
 
@@ -195,6 +197,9 @@ ${sectionsHtml}
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
+      {/* Summary Card — shown first */}
+      {report.summary && <SummaryCard report={report} idea={idea || ''} />}
+
       {/* Verdict banner */}
       <div className={`rounded-xl border-2 p-5 ${verdictStyle.bg} ${verdictStyle.text}`}>
         <div className="flex items-center gap-3">
@@ -250,6 +255,19 @@ ${sectionsHtml}
             <ScoreGauge label="市场前景" score={report.market_score} />
             <ScoreGauge label="开发可行性" score={report.feasibility_score} />
           </div>
+          {report.scoring && (
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 text-center">评分依据</p>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <ScoringItem label="市场规模" value={report.scoring.market_size} color="blue" />
+                <ScoringItem label="用户需求" value={report.scoring.user_demand} color="blue" />
+                <ScoringItem label="竞争密度" value={report.scoring.competition_density} color="blue" />
+                <ScoringItem label="付费潜力" value={report.scoring.monetization_potential} color="blue" />
+                <ScoringItem label="技术可行" value={report.scoring.tech_feasibility} color="indigo" />
+                <ScoringItem label="团队成本" value={report.scoring.team_cost} color="indigo" />
+              </div>
+            </div>
+          )}
         </Section>
       )}
 
@@ -395,62 +413,66 @@ ${sectionsHtml}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-3 pt-4 flex-wrap">
-        <div className="relative" ref={menuRef}>
+      <div className="flex items-center gap-3 pt-4 flex-wrap">
+        {/* Right actions group */}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowDownloadMenu(v => !v)}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+            onClick={onReset}
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            下载文件
-            <svg className={`w-3.5 h-3.5 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            返回
           </button>
-          {showDownloadMenu && (
-            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px]">
-              <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                导出为 PDF
-              </button>
-              <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
-                导出为 Markdown
-              </button>
-            </div>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowDownloadMenu(v => !v)}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+            >
+              下载文件
+              <svg className={`w-3.5 h-3.5 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {showDownloadMenu && (
+              <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px]">
+                <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  导出为 PDF
+                </button>
+                <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                  导出为 Markdown
+                </button>
+              </div>
+            )}
+          </div>
+          {onShare && (
+            <button
+              onClick={onShare}
+              disabled={sharing}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              {sharing ? '生成链接...' : '分享'}
+            </button>
+          )}
+          {onPmConsult && (
+            <button
+              onClick={onPmConsult}
+              className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                pmConsultOpen
+                  ? 'bg-gray-100 text-gray-600 border border-gray-300'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {pmConsultOpen ? '关闭 PM 顾问' : '追问深入分析'}
+            </button>
+          )}
+          {(onGeneratePrd || onViewPrd) && (
+            <button
+              onClick={onViewPrd || onGeneratePrd}
+              disabled={prdLoading || false}
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            >
+              {onViewPrd ? '查看 PRD' : prdLoading ? '生成中...' : '生成 PRD'}
+              {!onViewPrd && !prdLoading && <span className="text-xs text-blue-200 font-normal">(⚡️消耗2积分)</span>}
+            </button>
           )}
         </div>
-        {onShare && (
-          <button
-            onClick={onShare}
-            disabled={sharing}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
-            {sharing ? '生成链接...' : '分享'}
-          </button>
-        )}
-        {onPmConsult && (
-          <button
-            onClick={onPmConsult}
-            className={`rounded-lg px-6 py-2.5 text-sm font-medium transition-colors ${
-              pmConsultOpen
-                ? 'bg-gray-100 text-gray-600 border border-gray-300'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {pmConsultOpen ? '关闭 PM 顾问' : '追问深入分析'}
-          </button>
-        )}
-        {onGeneratePrd && (
-          <button
-            onClick={onGeneratePrd}
-            disabled={prdLoading}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-          >
-            {prdLoading ? '生成中...' : '生成 PRD'}
-          </button>
-        )}
-        <button
-          onClick={onReset}
-          className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          验证另一个想法
-        </button>
       </div>
     </div>
   );
@@ -479,6 +501,88 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="bg-gray-50 rounded-lg p-3 text-center">
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className="text-sm font-medium text-gray-800">{value}</p>
+    </div>
+  );
+}
+
+function normalizedScore(...scores: number[]): number {
+  const max = Math.max(...scores.filter(n => !isNaN(n)), 0);
+  const avg = scores.reduce((a, b) => a + (isNaN(b) ? 0 : b), 0) / scores.length;
+  return max > 10 ? avg / 10 : avg;
+}
+
+function SummaryCard({ report, idea }: { report: ValidationReport; idea?: string }) {
+  const s = report.summary;
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+      <div className="p-6">
+        {idea && (
+          <>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-sm">🌱</span>
+              <span className="text-[10px] text-gray-300 font-medium tracking-wider">芥子 · AI 产品验证</span>
+            </div>
+            <p className="text-sm font-medium text-gray-800 leading-relaxed mb-4">{idea}</p>
+          </>
+        )}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-gray-400">结论摘要</span>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-gray-800">{normalizedScore(report.market_score, report.feasibility_score).toFixed(1)}</span>
+            <span className="text-xs text-gray-400 ml-0.5">/10</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-blue-400 font-medium uppercase tracking-wider mb-1">市场机会</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.market_opportunity || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-purple-400 font-medium uppercase tracking-wider mb-1">技术难度</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.tech_difficulty || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-amber-50 to-amber-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-amber-400 font-medium uppercase tracking-wider mb-1">启动成本</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.startup_cost || '-'}</p>
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-green-50/50 rounded-lg p-3 text-center">
+            <p className="text-[10px] text-green-400 font-medium uppercase tracking-wider mb-1">回本周期</p>
+            <p className="text-sm font-semibold text-gray-800">{s?.payback_period || '-'}</p>
+          </div>
+        </div>
+        {s?.one_liner && (
+          <div className="mb-5">
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              一句话总结
+            </h3>
+            <div className="bg-emerald-50/60 rounded-lg overflow-hidden">
+              <div className="flex">
+                <div className="w-1 bg-emerald-400 shrink-0" />
+                <div className="flex-1 px-4 py-3">
+                  <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                    &ldquo;{s.one_liner}&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScoringItem({ label, value, color }: { label: string; value: number; color: string }) {
+  const dots = '●'.repeat(Math.max(0, Math.min(5, value || 0))) + '○'.repeat(Math.max(0, 5 - Math.min(5, value || 0)));
+  const colorClass = color === 'indigo' ? 'text-indigo-400' : 'text-blue-400';
+  return (
+    <div className="text-center">
+      <p className="text-[10px] text-gray-400 mb-0.5">{label}</p>
+      <p className={`text-xs tracking-wider ${colorClass}`}>{dots}</p>
     </div>
   );
 }

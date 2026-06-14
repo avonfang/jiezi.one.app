@@ -79,20 +79,37 @@ interface ActivationCode {
   created_at: number;
 }
 
+interface FeedbackItem {
+  id: string;
+  content: string;
+  contact: string;
+  created_at: number;
+}
+
 const PLAN_NAMES: Record<string, string> = {
-  single: '单次验证',
-  triple: '3 次套餐',
-  ten: '10 次套餐',
+  single: '1 积分',
+  triple: '3 积分',
+  ten: '10 积分',
 };
+
+type Tab = 'codes' | 'orders' | 'feedback' | 'credits';
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [genPlan, setGenPlan] = useState('triple');
   const [genCount, setGenCount] = useState(5);
   const [genResult, setGenResult] = useState<ActivationCode[] | null>(null);
-  const [tab, setTab] = useState<'orders' | 'codes'>('codes');
+  const [tab, setTab] = useState<Tab>('codes');
+
+  // Credits lookup
+  const [lookupUserId, setLookupUserId] = useState('');
+  const [lookupResult, setLookupResult] = useState<{ userId: string; balance: number } | null>(null);
+  const [addAmount, setAddAmount] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupMsg, setLookupMsg] = useState('');
 
   const loadOrders = () => {
     fetch('/api/orders/list').then(r => r.json()).then(d => setOrders(d.orders || []));
@@ -100,11 +117,14 @@ export default function AdminPage() {
   const loadCodes = () => {
     fetch('/api/codes/list').then(r => r.json()).then(d => setCodes(d.codes || []));
   };
+  const loadFeedbacks = () => {
+    fetch('/api/admin/feedback').then(r => r.json()).then(d => setFeedbacks(d.feedbacks || []));
+  };
 
   useEffect(() => {
     if (sessionStorage.getItem('jiezi-admin-auth') === '1') {
       setAuthed(true);
-      loadOrders(); loadCodes();
+      loadOrders(); loadCodes(); loadFeedbacks();
     }
   }, []);
 
@@ -130,26 +150,83 @@ export default function AdminPage() {
     }
   };
 
+  const handleLookup = async () => {
+    const id = lookupUserId.trim();
+    if (!id) return;
+    setLookupLoading(true);
+    setLookupMsg('');
+    setLookupResult(null);
+    try {
+      const res = await fetch('/api/admin/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id, action: 'lookup' }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setLookupMsg(data.error);
+      } else {
+        setLookupResult(data);
+      }
+    } catch {
+      setLookupMsg('查询失败');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleAddCredits = async () => {
+    if (!lookupResult || !addAmount) return;
+    const amount = parseInt(addAmount);
+    if (isNaN(amount) || amount < 1) return;
+    setLookupLoading(true);
+    try {
+      const res = await fetch('/api/admin/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: lookupResult.userId, action: 'add', amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLookupResult(data);
+        setAddAmount('');
+        setLookupMsg(`成功添加 ${amount} 次`);
+      } else {
+        setLookupMsg(data.error || '操作失败');
+      }
+    } catch {
+      setLookupMsg('操作失败');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   if (!authed) return <AdminLogin onLogin={() => setAuthed(true)} />;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <a href="/" className="text-xs text-gray-400 hover:text-gray-600 mr-3">← 返回首页</a>
             <h1 className="text-xl font-bold text-gray-900 inline">管理后台</h1>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setTab('codes')} className={`text-sm px-3 py-1 rounded ${tab === 'codes' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}>激活码</button>
-            <button onClick={() => setTab('orders')} className={`text-sm px-3 py-1 rounded ${tab === 'orders' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}>订单</button>
+          <div className="flex gap-2 flex-wrap">
+            {([['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数']] as [Tab, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`text-sm px-3 py-1 rounded ${tab === key ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* ====== Activation Codes Tab ====== */}
         {tab === 'codes' && (
           <>
-            {/* Generate */}
             <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
               <h2 className="font-semibold text-gray-900 mb-3">生成激活码</h2>
               <div className="flex items-end gap-3 flex-wrap">
@@ -169,8 +246,6 @@ export default function AdminPage() {
                   生成
                 </button>
               </div>
-
-              {/* Generation result */}
               {genResult && (
                 <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm text-green-700 font-medium mb-2">已生成 {genResult.length} 个激活码：</p>
@@ -179,25 +254,16 @@ export default function AdminPage() {
                       <div key={i} className="flex items-center gap-3 text-sm">
                         <code className="bg-white px-2 py-1 rounded border border-green-100 font-mono text-green-800 select-all">{c.code}</code>
                         <span className="text-gray-500">{c.plan}</span>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(c.code)}
-                          className="text-xs text-blue-500 hover:text-blue-700"
-                        >复制</button>
+                        <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-xs text-blue-500 hover:text-blue-700">复制</button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-
-            {/* Code list */}
             <div>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                全部激活码（{codes.length}）
-              </h2>
-              {codes.length === 0 && (
-                <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无激活码</p>
-              )}
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">全部激活码（{codes.length}）</h2>
+              {codes.length === 0 && <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无激活码</p>}
               <div className="space-y-1.5">
                 {codes.map((c, i) => (
                   <div key={i} className="bg-white border border-gray-100 rounded-lg px-4 py-2.5 flex items-center justify-between text-sm">
@@ -210,11 +276,7 @@ export default function AdminPage() {
                         ? <span className="text-xs text-green-600 font-medium">可用</span>
                         : <span className="text-xs text-gray-400">已使用</span>
                       }
-                      {c.redeemed_at && (
-                        <span className="text-xs text-gray-400">
-                          {new Date(c.redeemed_at).toLocaleString('zh-CN')}
-                        </span>
-                      )}
+                      {c.redeemed_at && <span className="text-xs text-gray-400">{new Date(c.redeemed_at).toLocaleString('zh-CN')}</span>}
                     </div>
                   </div>
                 ))}
@@ -228,16 +290,16 @@ export default function AdminPage() {
           <>
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">待确认（{orders.filter(o => o.status === 'pending').length}）</h2>
-              {orders.filter(o => o.status === 'pending').length === 0 && (
-                <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无待确认订单</p>
-              )}
+              {orders.filter(o => o.status === 'pending').length === 0 && <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无待确认订单</p>}
               <div className="space-y-2">
                 {orders.filter(o => o.status === 'pending').map(order => (
                   <div key={order.id} className="bg-white border border-yellow-200 rounded-lg p-4 flex items-center justify-between">
                     <div>
                       <p className="font-medium text-gray-900">{PLAN_NAMES[order.plan] || order.plan}</p>
                       <p className="text-sm text-gray-500">{order.price} · {order.credits} 次 · 单号尾号 {order.transaction_id}</p>
-                      <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString('zh-CN')}</p>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(order.created_at).toLocaleString('zh-CN')} · {order.userId.slice(0, 12)}...
+                      </div>
                     </div>
                     <button onClick={() => handleConfirm(order.id)} className="shrink-0 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors">确认到账</button>
                   </div>
@@ -246,11 +308,96 @@ export default function AdminPage() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">已确认（{orders.filter(o => o.status === 'confirmed').length}）</h2>
-              {orders.filter(o => o.status === 'confirmed').length === 0 && (
-                <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无已确认订单</p>
-              )}
+              {orders.filter(o => o.status === 'confirmed').length === 0 && <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无已确认订单</p>}
+              <div className="space-y-1.5">
+                {orders.filter(o => o.status === 'confirmed').map(order => (
+                  <div key={order.id} className="bg-white border border-gray-100 rounded-lg px-4 py-2.5 flex items-center justify-between text-sm">
+                    <div>
+                      <p className="font-medium text-gray-900">{PLAN_NAMES[order.plan] || order.plan}</p>
+                      <p className="text-xs text-gray-400">{order.price} · {order.userId.slice(0, 12)}... · {new Date(order.confirmed_at || order.created_at).toLocaleString('zh-CN')}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
+        )}
+
+        {/* ====== Feedback Tab ====== */}
+        {tab === 'feedback' && (
+          <div>
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">用户反馈（{feedbacks.length}）</h2>
+            {feedbacks.length === 0 && <p className="text-sm text-gray-400 bg-white rounded-lg p-6 text-center border border-gray-100">暂无反馈</p>}
+            <div className="space-y-3">
+              {feedbacks.map((f, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">{f.content}</p>
+                    <span className="shrink-0 text-xs text-gray-400">{new Date(f.created_at).toLocaleString('zh-CN')}</span>
+                  </div>
+                  {f.contact && (
+                    <p className="text-xs text-blue-500">联系方式：{f.contact}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ====== Credits Management Tab ====== */}
+        {tab === 'credits' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-3">查询用户次数</h2>
+              <div className="flex items-end gap-3 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-xs text-gray-500 mb-1">用户 ID</label>
+                  <input
+                    value={lookupUserId}
+                    onChange={e => setLookupUserId(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleLookup()}
+                    placeholder="输入用户 clientId"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  />
+                </div>
+                <button onClick={handleLookup} disabled={!lookupUserId.trim() || lookupLoading} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  {lookupLoading ? '查询中...' : '查询'}
+                </button>
+              </div>
+
+              {lookupMsg && !lookupResult && (
+                <p className="text-sm text-red-500 mt-3">{lookupMsg}</p>
+              )}
+
+              {lookupResult && (
+                <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">用户 {lookupResult.userId.slice(0, 16)}...</p>
+                      <p className="text-sm text-gray-500 mt-0.5">当前余额：<strong className="text-blue-700">{lookupResult.balance}</strong> 次</p>
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">增加次数</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={addAmount}
+                        onChange={e => setAddAmount(e.target.value)}
+                        placeholder="输入数量"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm w-24 outline-none focus:border-blue-400"
+                      />
+                    </div>
+                    <button onClick={handleAddCredits} disabled={!addAmount || lookupLoading} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                      增加
+                    </button>
+                  </div>
+                  {lookupMsg && lookupResult && <p className="text-sm text-green-600 mt-2">{lookupMsg}</p>}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
