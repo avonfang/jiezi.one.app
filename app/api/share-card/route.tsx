@@ -73,7 +73,7 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
             {verdict}
           </div>
 
-          {/* Idea + Score row */}
+          {/* Idea + Score circle */}
           <div style={{ display: 'flex', marginBottom: 24 }}>
             <div style={{ flex: 1, marginRight: 28 }}>
               <div style={{ fontSize: 36, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.35, marginBottom: 12 }}>
@@ -100,14 +100,7 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
           {/* Spacer */}
           <div style={{ flex: 1 }} />
 
-          {/* Score pills */}
-          <div style={{ display: 'flex', marginBottom: 32 }}>
-            <ScorePill label="市场前景" score={market_score} />
-            <div style={{ width: 16 }} />
-            <ScorePill label="开发可行性" score={feasibility_score} />
-          </div>
-
-          {/* Footer inside card */}
+          {/* Footer */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', paddingTop: 28,
             borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -119,33 +112,5 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
       </div>
     ),
     { width: 800, height: 1000 },
-  );
-}
-
-function ScorePill({ label, score }: { label: string; score: number }) {
-  const color = score >= 7 ? '#34C472' : score >= 5 ? '#F59E6B' : '#EF4444';
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      paddingTop: 18, paddingBottom: 18, paddingLeft: 22, paddingRight: 22,
-      borderRadius: 16,
-      backgroundColor: 'rgba(255,255,255,0.04)',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          <span style={{ fontSize: 26, fontWeight: 800, color }}>{score}</span>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginLeft: 2 }}>/10</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex' }}>
-        {[1,2,3,4,5,6,7,8,9,10].map(i => (
-          <div key={i} style={{
-            width: 12, height: 4, borderRadius: 2, marginRight: 4,
-            backgroundColor: i <= score ? color : 'rgba(255,255,255,0.08)',
-          }} />
-        ))}
-      </div>
-    </div>
   );
 }
