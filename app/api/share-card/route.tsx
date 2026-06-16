@@ -90,7 +90,14 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
           </div>
         )}
 
-        {/* Spacer to push footer down */}
+        {/* Score pills row */}
+        <div style={{ display: 'flex', marginTop: 60 }}>
+          <ScorePill label="市场前景" score={market_score} />
+          <div style={{ width: 24 }} />
+          <ScorePill label="开发可行性" score={feasibility_score} />
+        </div>
+
+        {/* Spacer */}
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
@@ -104,5 +111,22 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
       </div>
     ),
     { width: 800, height: 1000 },
+  );
+}
+
+function ScorePill({ label, score }: { label: string; score: number }) {
+  const color = score >= 7 ? '#34C472' : score >= 5 ? '#F59E6B' : '#EF4444';
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      paddingTop: 20, paddingBottom: 20, paddingLeft: 24, paddingRight: 24,
+      borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)',
+    }}>
+      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        <span style={{ fontSize: 32, fontWeight: 800, color }}>{score}</span>
+        <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', marginLeft: 2 }}>/10</span>
+      </div>
+    </div>
   );
 }
