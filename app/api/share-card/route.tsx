@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const one_liner = searchParams.get('one_liner');
 
   if (!idea) {
-    return new Response('请通过 POST 请求生成分享卡片，或在 URL 中添加 ?idea=xxx&verdict=xxx 参数', {
+    return new Response('请通过 POST 请求生成分享卡片，或在 URL 中添加参数', {
       status: 400,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
@@ -33,9 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { idea, verdict, market_score, feasibility_score, summary } = await request.json();
-    if (!idea || !verdict) {
-      return Response.json({ error: '缺少参数' }, { status: 400 });
-    }
+    if (!idea || !verdict) return Response.json({ error: '缺少参数' }, { status: 400 });
     return generateCard({ idea, verdict, market_score, feasibility_score, summary });
   } catch (error) {
     console.error('OG card error:', error);
@@ -65,33 +63,14 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
         fontFamily: 'sans-serif',
         padding: 60,
       }}>
-        {/* Brand + Score row */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 60,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 26, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
-            <div style={{
-              marginLeft: 10,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: '#F59E6B',
-            }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 52, fontWeight: 800, color: '#FFFFFF' }}>{avgScore}</span>
-            <span style={{ fontSize: 20, color: 'rgba(255,255,255,0.5)', marginLeft: 4 }}>/10</span>
-          </div>
+        {/* Brand row */}
+        <div style={{ display: 'flex', marginBottom: 60 }}>
+          <span style={{ fontSize: 26, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
         </div>
 
         {/* Verdict badge */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
           paddingTop: 12,
           paddingBottom: 12,
           paddingLeft: 28,
@@ -121,7 +100,6 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
         {oneLiner && (
           <div style={{
             display: 'flex',
-            alignItems: 'flex-start',
             marginTop: 48,
             paddingTop: 32,
             paddingBottom: 32,
@@ -130,80 +108,21 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
             borderRadius: 16,
             backgroundColor: 'rgba(255,255,255,0.08)',
           }}>
-            <div style={{
-              width: 4,
-              height: 64,
-              borderRadius: 2,
-              backgroundColor: 'rgba(255,255,255,0.3)',
-              marginRight: 20,
-              flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 22,
-              color: 'rgba(255,255,255,0.8)',
-              lineHeight: 1.5,
-            }}>
+            <span style={{ fontSize: 22, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
               {oneLiner}
             </span>
           </div>
         )}
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Score bars */}
-        <div style={{ display: 'flex', marginBottom: 48 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>市场前景</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{market_score}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <div style={{
-                width: `${(market_score || 0) * 10}%`,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: market_score >= 7 ? 'rgba(52,196,114,0.8)' : market_score >= 5 ? 'rgba(245,158,107,0.8)' : 'rgba(239,68,68,0.8)',
-              }} />
-            </div>
-          </div>
-          <div style={{ width: 32 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>开发可行性</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{feasibility_score}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <div style={{
-                width: `${(feasibility_score || 0) * 10}%`,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: feasibility_score >= 7 ? 'rgba(52,196,114,0.8)' : feasibility_score >= 5 ? 'rgba(245,158,107,0.8)' : 'rgba(239,68,68,0.8)',
-              }} />
-            </div>
-          </div>
-        </div>
-
         {/* Footer */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: 36,
+          marginTop: 60,
           borderTop: '1px solid rgba(255,255,255,0.1)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>JIEZI</span>
-            <span style={{
-              marginLeft: 10,
-              marginRight: 10,
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: 'rgba(255,255,255,0.2)',
-            }} />
-            <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.35)' }}>AI 产品验证</span>
-          </div>
+          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>JIEZI</span>
           <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>AI 分析仅供参考</span>
         </div>
       </div>
