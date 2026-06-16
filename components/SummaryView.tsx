@@ -58,8 +58,10 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // fallback: open in new tab
-      window.open('/api/share-card', '_blank');
+      // fallback: open in new tab with query params
+      const q = new URLSearchParams({ idea, verdict: report.verdict, market_score: String(report.market_score || 0), feasibility_score: String(report.feasibility_score || 0) });
+      if (report.summary?.one_liner) q.set('one_liner', report.summary.one_liner);
+      window.open(`/api/share-card?${q.toString()}`, '_blank');
     } finally {
       setCardLoading(false);
     }
