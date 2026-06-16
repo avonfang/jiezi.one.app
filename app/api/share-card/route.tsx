@@ -69,7 +69,6 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
           display: 'flex', flexDirection: 'column', flex: 1,
           padding: 44, borderRadius: 32,
           backgroundColor: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.06)',
         }}>
           {/* Verdict badge */}
           <div style={{
@@ -80,19 +79,16 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
             {verdict}
           </div>
 
-          {/* Idea (headline) */}
+          {/* Idea */}
           <div style={{
-            fontSize: 38, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.4,
-            marginBottom: oneLiner ? 20 : 0,
+            fontSize: 38, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.4, marginBottom: oneLiner ? 20 : 0,
           }}>
             {idea}
           </div>
 
           {/* One-liner */}
           {oneLiner && (
-            <div style={{
-              fontSize: 19, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5,
-            }}>
+            <div style={{ fontSize: 19, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>
               {oneLiner}
             </div>
           )}
@@ -100,7 +96,7 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
           {/* Spacer */}
           <div style={{ flex: 1 }} />
 
-          {/* Score stats row */}
+          {/* Score stats */}
           <div style={{ display: 'flex', marginBottom: 32 }}>
             <ScoreStat label="市场前景" score={market_score} />
             <div style={{ width: 32 }} />
