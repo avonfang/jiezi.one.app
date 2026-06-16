@@ -49,156 +49,52 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
   return new ImageResponse(
     (
       <div style={{
-        width: 800,
-        height: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#1A1040',
-        fontFamily: 'sans-serif',
-        position: 'relative',
+        width: 800, height: 1000, display: 'flex', flexDirection: 'column',
+        backgroundColor: '#1A1040', fontFamily: 'sans-serif', padding: 60,
       }}>
-        {/* Decorative orbs */}
-        <div style={{
-          position: 'absolute', top: -160, left: -80,
-          width: 500, height: 500, borderRadius: 250,
-          backgroundColor: '#4A00E0', opacity: 0.35,
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -100, right: -60,
-          width: 400, height: 400, borderRadius: 200,
-          backgroundColor: '#8E2DE2', opacity: 0.25,
-        }} />
-        <div style={{
-          position: 'absolute', top: 300, right: -100,
-          width: 300, height: 300, borderRadius: 150,
-          backgroundColor: '#6C3CE0', opacity: 0.15,
-        }} />
-        {/* Top-right warm accent */}
-        <div style={{
-          position: 'absolute', top: 80, right: 80,
-          width: 160, height: 160, borderRadius: 80,
-          backgroundColor: '#F59E6B', opacity: 0.06,
-        }} />
+        {/* Brand */}
+        <div style={{ display: 'flex', marginBottom: 60, alignItems: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8E2DE2', marginRight: 12 }} />
+          <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
+        </div>
 
-        {/* Main content */}
+        {/* Verdict */}
         <div style={{
-          display: 'flex', flexDirection: 'column', flex: 1,
-          padding: 56, position: 'relative',
+          display: 'flex', paddingTop: 12, paddingBottom: 12, paddingLeft: 28, paddingRight: 28,
+          borderRadius: 999, backgroundColor: vs.bg, color: vs.text,
+          fontSize: 24, fontWeight: 700, marginBottom: 40,
         }}>
-          {/* Top bar */}
+          {verdict}
+        </div>
+
+        {/* Idea */}
+        <div style={{ fontSize: 42, color: '#FFFFFF', fontWeight: 700, lineHeight: 1.4, marginBottom: oneLiner ? 32 : 0 }}>
+          {idea}
+        </div>
+
+        {/* One-liner */}
+        {oneLiner && (
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48,
+            display: 'flex', marginTop: 48, paddingTop: 32, paddingBottom: 32, paddingLeft: 28, paddingRight: 28,
+            borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                backgroundColor: '#8E2DE2',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 12,
-              }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>J</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>AI 产品验证</span>
-              </div>
-            </div>
+            <span style={{ fontSize: 22, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{oneLiner}</span>
           </div>
+        )}
 
-          {/* Glass card */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', flex: 1,
-            padding: 48,
-            borderRadius: 32,
-            backgroundColor: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            {/* Verdict badge */}
-            <div style={{
-              display: 'flex', paddingTop: 10, paddingBottom: 10, paddingLeft: 22, paddingRight: 22,
-              borderRadius: 999, backgroundColor: vs.bg, color: vs.text,
-              fontSize: 20, fontWeight: 700, marginBottom: 28,
-            }}>
-              {verdict}
-            </div>
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
 
-            {/* Idea + Score */}
-            <div style={{ display: 'flex', marginBottom: 20 }}>
-              <div style={{ flex: 1, marginRight: 32 }}>
-                <div style={{ fontSize: 36, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.35, marginBottom: 12 }}>
-                  {idea}
-                </div>
-                {oneLiner && (
-                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-                    {oneLiner}
-                  </div>
-                )}
-              </div>
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                width: 120, height: 120, borderRadius: 60,
-                border: '3px solid rgba(255,255,255,0.12)',
-                backgroundColor: 'rgba(255,255,255,0.04)',
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 44, fontWeight: 800, color: '#FFFFFF' }}>{avgScore}</span>
-                <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.35)' }}>/10</span>
-              </div>
-            </div>
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
-
-            {/* Score pills */}
-            <div style={{ display: 'flex' }}>
-              <ScorePill label="市场前景" score={market_score} />
-              <div style={{ width: 16 }} />
-              <ScorePill label="开发可行性" score={feasibility_score} />
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 32,
-          }}>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
-              用小想法，创造大未来
-            </span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
-              JIEZI.ONE
-            </span>
-          </div>
+        {/* Footer */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', paddingTop: 36,
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+        }}>
+          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>JIEZI</span>
+          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>AI 分析仅供参考</span>
         </div>
       </div>
     ),
     { width: 800, height: 1000 },
-  );
-}
-
-function ScorePill({ label, score }: { label: string; score: number }) {
-  const color = score >= 7 ? '#34C472' : score >= 5 ? '#F59E6B' : '#EF4444';
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      paddingTop: 20, paddingBottom: 20, paddingLeft: 24, paddingRight: 24,
-      borderRadius: 16,
-      backgroundColor: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.06)',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          <span style={{ fontSize: 28, fontWeight: 800, color }}>{score}</span>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginLeft: 2 }}>/10</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex' }}>
-        {[1,2,3,4,5,6,7,8,9,10].map(i => (
-          <div key={i} style={{
-            width: 12, height: 4, borderRadius: 2, marginRight: 4,
-            backgroundColor: i <= score ? color : 'rgba(255,255,255,0.08)',
-          }} />
-        ))}
-      </div>
-    </div>
   );
 }
