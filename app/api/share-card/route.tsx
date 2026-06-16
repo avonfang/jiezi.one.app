@@ -50,67 +50,91 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
     (
       <div style={{
         width: 800, height: 1000, display: 'flex', flexDirection: 'column',
-        backgroundColor: '#1A1040', fontFamily: 'sans-serif', padding: 48,
+        backgroundColor: '#140A33', fontFamily: 'sans-serif', padding: 48,
       }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', marginBottom: 40, alignItems: 'center' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8E2DE2', marginRight: 12 }} />
-          <span style={{ fontSize: 22, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
+        {/* Brand bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8E2DE2', marginRight: 12 }} />
+            <span style={{ fontSize: 22, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            <span style={{ fontSize: 32, fontWeight: 800, color: '#FFFFFF' }}>{avgScore}</span>
+            <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.35)', marginLeft: 2 }}>/10</span>
+          </div>
         </div>
 
         {/* Glass card */}
         <div style={{
           display: 'flex', flexDirection: 'column', flex: 1,
           padding: 44, borderRadius: 32,
-          backgroundColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.06)',
         }}>
-          {/* Verdict */}
+          {/* Verdict badge */}
           <div style={{
             display: 'flex', paddingTop: 10, paddingBottom: 10, paddingLeft: 22, paddingRight: 22,
             borderRadius: 999, backgroundColor: vs.bg, color: vs.text,
-            fontSize: 20, fontWeight: 700, marginBottom: 32,
+            fontSize: 20, fontWeight: 700, marginBottom: 36,
           }}>
             {verdict}
           </div>
 
-          {/* Idea + Score circle */}
-          <div style={{ display: 'flex', marginBottom: 24 }}>
-            <div style={{ flex: 1, marginRight: 28 }}>
-              <div style={{ fontSize: 36, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.35, marginBottom: 12 }}>
-                {idea}
-              </div>
-              {oneLiner && (
-                <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-                  {oneLiner}
-                </div>
-              )}
-            </div>
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              width: 110, height: 110, borderRadius: 55,
-              border: '3px solid rgba(255,255,255,0.15)',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 40, fontWeight: 800, color: '#FFFFFF' }}>{avgScore}</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>/10</span>
-            </div>
+          {/* Idea (headline) */}
+          <div style={{
+            fontSize: 38, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.4,
+            marginBottom: oneLiner ? 20 : 0,
+          }}>
+            {idea}
           </div>
+
+          {/* One-liner */}
+          {oneLiner && (
+            <div style={{
+              fontSize: 19, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5,
+            }}>
+              {oneLiner}
+            </div>
+          )}
 
           {/* Spacer */}
           <div style={{ flex: 1 }} />
 
+          {/* Score stats row */}
+          <div style={{ display: 'flex', marginBottom: 32 }}>
+            <ScoreStat label="市场前景" score={market_score} />
+            <div style={{ width: 32 }} />
+            <ScoreStat label="开发可行性" score={feasibility_score} />
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 28 }} />
+
           {/* Footer */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', paddingTop: 28,
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>用小想法，创造大未来</span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>JIEZI.ONE</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>JIEZI.ONE</span>
           </div>
         </div>
       </div>
     ),
     { width: 800, height: 1000 },
+  );
+}
+
+function ScoreStat({ label, score }: { label: string; score: number }) {
+  const color = score >= 7 ? '#34C472' : score >= 5 ? '#F59E6B' : '#EF4444';
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      paddingTop: 16, paddingBottom: 16, paddingLeft: 20, paddingRight: 20,
+      borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.03)',
+    }}>
+      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        <span style={{ fontSize: 30, fontWeight: 800, color }}>{score}</span>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', marginLeft: 2 }}>/10</span>
+      </div>
+    </div>
   );
 }
