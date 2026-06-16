@@ -121,6 +121,27 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
 
 const OPENID_PREFIX = 'auth:openid:';
 
+export async function updateWechatProfile(
+  userId: string,
+  updates: { nickName?: string; avatarBase64?: string }
+): Promise<void> {
+  const raw = await kvGet<any>(`auth:users:${userId}`);
+  if (!raw) throw new Error('用户不存在');
+  const data = typeof raw === 'string' ? tryParse(raw) : raw;
+  if (!data) throw new Error('用户数据异常');
+  if (updates.nickName) data.name = updates.nickName;
+  if (updates.avatarBase64) data.avatarBase64 = updates.avatarBase64;
+  await kvSet(`auth:users:${userId}`, data);
+}
+
+export async function getWechatProfile(userId: string): Promise<{ nickName: string; avatarBase64?: string } | null> {
+  const raw = await kvGet<any>(`auth:users:${userId}`);
+  if (!raw) return null;
+  const data = typeof raw === 'string' ? tryParse(raw) : raw;
+  if (!data) return null;
+  return { nickName: data.name || `微信用户_${data.openid?.slice(-4) || ''}`, avatarBase64: data.avatarBase64 };
+}
+
 export async function getWechatOpenid(userId: string): Promise<string | null> {
   const raw = await kvGet<any>(`auth:users:${userId}`);
   if (!raw) return null;
