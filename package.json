@@ -6,20 +6,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:tailwind": "node scripts/build-tailwind-full.js",
+    "vercel-build": "npm run build:tailwind && next build"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
     "@vercel/kv": "^3.0.0",
+    "@vercel/og": "^0.11.1",
     "dompurify": "^3.4.10",
     "html-to-image": "^1.11.13",
     "next": "16.2.9",
+    "postcss": "^8.5.15",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "resend": "^6.12.4"
+    "resend": "^6.12.4",
+    "tailwindcss-v3": "npm:tailwindcss@^3.4.17"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
