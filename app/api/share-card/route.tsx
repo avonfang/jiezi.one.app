@@ -53,7 +53,9 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
         backgroundColor: '#5B6FE6', fontFamily: 'sans-serif', padding: 60,
       }}>
         {/* Brand + Score row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 60 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 60,
+        }}>
           <span style={{ fontSize: 26, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
           <div style={{ display: 'flex', alignItems: 'baseline' }}>
             <span style={{ fontSize: 52, fontWeight: 800, color: '#FFFFFF' }}>{avgScore}</span>
@@ -71,7 +73,10 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
         </div>
 
         {/* Idea */}
-        <div style={{ fontSize: 42, color: '#FFFFFF', fontWeight: 700, lineHeight: 1.4, marginBottom: oneLiner ? 32 : 0 }}>
+        <div style={{
+          fontSize: 42, color: '#FFFFFF', fontWeight: 700, lineHeight: 1.4,
+          marginBottom: oneLiner ? 32 : 0,
+        }}>
           {idea}
         </div>
 
@@ -85,38 +90,12 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
           </div>
         )}
 
-        {/* Score bars */}
-        <div style={{ display: 'flex', marginTop: 60 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>市场前景</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{market_score}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <div style={{
-                width: `${(market_score || 0) * 10}%`, height: 4, borderRadius: 2,
-                backgroundColor: market_score >= 7 ? '#34C472' : market_score >= 5 ? '#F59E6B' : '#EF4444',
-              }} />
-            </div>
-          </div>
-          <div style={{ width: 32 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>开发可行性</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{feasibility_score}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <div style={{
-                width: `${(feasibility_score || 0) * 10}%`, height: 4, borderRadius: 2,
-                backgroundColor: feasibility_score >= 7 ? '#34C472' : feasibility_score >= 5 ? '#F59E6B' : '#EF4444',
-              }} />
-            </div>
-          </div>
-        </div>
+        {/* Spacer to push footer down */}
+        <div style={{ flex: 1 }} />
 
         {/* Footer */}
         <div style={{
-          display: 'flex', justifyContent: 'space-between', paddingTop: 36, marginTop: 60,
+          display: 'flex', justifyContent: 'space-between', paddingTop: 36,
           borderTop: '1px solid rgba(255,255,255,0.1)',
         }}>
           <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>JIEZI</span>
