@@ -49,6 +49,7 @@ export async function createXorpayPayment(params: {
   notify_url: string;
   return_url?: string;
   more?: string;
+  openid?: string;   // required for jsapi (Mini Program WeChat Pay)
 }) {
   const { aid, appSecret } = getXorpayConfig();
   const sign = generatePaySign(
@@ -64,6 +65,7 @@ export async function createXorpayPayment(params: {
   formData.append('notify_url', params.notify_url);
   if (params.return_url) formData.append('return_url', params.return_url);
   if (params.more) formData.append('more', params.more);
+  if (params.openid) formData.append('openid', params.openid);
   formData.append('sign', sign);
 
   const res = await fetch(`https://xorpay.com/api/pay/${aid}`, {
@@ -72,10 +74,19 @@ export async function createXorpayPayment(params: {
     body: formData.toString(),
   });
 
-  return res.json() as Promise<{
+  const text = await res.text();
+  let parsed: any;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    console.error('XORPay non-JSON response:', text.slice(0, 500));
+    parsed = { status: 'parse_error', raw: text.slice(0, 200) };
+  }
+
+  return parsed as {
     status: string;
     aoid?: string;
     expire_in?: number;
-    info?: { qr?: string; url?: string };
-  }>;
+    info?: Record<string, string>;
+  };
 }

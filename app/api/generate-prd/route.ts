@@ -64,6 +64,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Support non-streaming mode for WeChat Mini Program
+    const url = new URL(request.url);
+    if (url.searchParams.get('mode') === 'json') {
+      try {
+        const prd = await generatePrd(idea, report);
+        return Response.json({ success: true, prd });
+      } catch (e) {
+        return Response.json({ error: e instanceof Error ? e.message : '生成失败' }, { status: 500 });
+      }
+    }
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -122,4 +133,16 @@ export async function POST(request: NextRequest) {
     console.error('PRD generation error:', error);
     return Response.json({ error: 'PRD 生成出错了' }, { status: 500 });
   }
+}
+
+async function generatePrd(idea: string, report: any): Promise<PRD> {
+  let fullResponse = '';
+  for await (const token of chatCompletionStream([
+    { role: 'system', content: CONTEXT },
+    { role: 'user', content: buildPrompt(idea, report) },
+  ], { temperature: 0.6, max_tokens: 4096 })) {
+    fullResponse += token;
+  }
+  const cleaned = fullResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(cleaned);
 }

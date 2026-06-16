@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { kvGet, kvSet, kvDel } from './kv-store';
+import { generateId } from './id-gen';
+import { initCredits } from './credits';
 
 const AUTH_KEY = 'auth:users';
 const RESET_PREFIX = 'reset_token:';
@@ -113,6 +115,61 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
   const users = await readUsers();
   const entry = Object.entries(users).find(([, u]) => u.name?.toLowerCase() === cleaned);
   return entry ? entry[1].userId : null;
+}
+
+// ── OpenID / WeChat login ────────────────────────────────────────────
+
+const OPENID_PREFIX = 'auth:openid:';
+
+export async function getWechatOpenid(userId: string): Promise<string | null> {
+  const raw = await kvGet<any>(`auth:users:${userId}`);
+  if (!raw) return null;
+  // Handle both plain object and double-serialized string (legacy)
+  const data = typeof raw === 'string' ? tryParse(raw) : raw;
+  return data?.openid || null;
+}
+
+function tryParse(s: string): any {
+  try { return JSON.parse(s); } catch { return null; }
+}
+
+export async function registerOrLoginByOpenid(
+  openid: string,
+  anonymousId?: string
+): Promise<{ userId: string; isNew: boolean }> {
+  const mapKey = OPENID_PREFIX + openid;
+  let userId = await kvGet<string>(mapKey);
+
+  if (userId) {
+    return { userId, isNew: false };
+  }
+
+  // New WeChat user
+  userId = 'u_' + crypto.randomBytes(12).toString('hex');
+  await kvSet(mapKey, userId);
+  await kvSet(`auth:users:${userId}`, {
+    userId,
+    name: `微信用户_${openid.slice(-4)}`,
+    openid,
+    createdAt: Date.now(),
+    type: 'wechat',
+  });
+  await initCredits(userId);
+
+  // Merge anonymous credits if provided
+  if (anonymousId) {
+    try {
+      const anonKey = `credits:${anonymousId}`;
+      const anonData = await kvGet<{ balance: number }>(anonKey);
+      if (anonData && anonData.balance > 0) {
+        const { kvAddCredits } = await import('./kv-store');
+        await kvAddCredits(userId, anonData.balance);
+        await kvSet(anonKey, { balance: 0, total_purchased: 0, created_at: Date.now() });
+      }
+    } catch { /* merge best-effort */ }
+  }
+
+  return { userId, isNew: true };
 }
 
 // Reset token functions

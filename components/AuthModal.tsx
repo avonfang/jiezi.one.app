@@ -95,6 +95,14 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
             />
           </div>
 
+          {mode === 'login' && (
+            <div className="text-right -mt-2">
+              <a href="/forgot-password" className="text-xs text-gray-400 hover:text-blue-500 transition-colors">
+                忘记密码？
+              </a>
+            </div>
+          )}
+
           {error && (
             <p className="text-sm text-red-500">{error}</p>
           )}

@@ -54,6 +54,7 @@ export default function AppPage() {
           setIdea(savedIdea);
           setReport(savedReport);
           setStatus('success');
+          setView('summary');
         }
       } catch { /* ignore */ }
     }

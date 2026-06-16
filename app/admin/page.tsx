@@ -291,7 +291,7 @@ export default function AdminPage() {
                           <td className="py-2.5 pr-4">{u.email}</td>
                           <td className="py-2.5 pr-4">{u.name}</td>
                           <td className="py-2.5 pr-4 text-gray-400">{new Date(u.createdAt).toLocaleString('zh-CN')}</td>
-                          <td className="py-2.5 text-gray-400 text-xs font-mono">{u.userId.slice(0, 16)}...</td>
+                          <td className="py-2.5 text-gray-400 text-xs font-mono break-all max-w-[160px]">{u.userId}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -382,7 +382,7 @@ export default function AdminPage() {
                       <p className="font-medium text-gray-900">{PLAN_NAMES[order.plan] || order.plan}</p>
                       <p className="text-sm text-gray-500">{order.price} · {order.credits} 次 · 单号尾号 {order.transaction_id}</p>
                       <div className="text-xs text-gray-400 mt-1">
-                        {new Date(order.created_at).toLocaleString('zh-CN')} · {order.userId.slice(0, 12)}...
+                        {new Date(order.created_at).toLocaleString('zh-CN')} · <span className="font-mono text-xs">{order.userId}</span>
                       </div>
                     </div>
                     <button onClick={() => handleConfirm(order.id)} className="shrink-0 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors">确认到账</button>
@@ -398,7 +398,7 @@ export default function AdminPage() {
                   <div key={order.id} className="bg-white border border-gray-100 rounded-lg px-4 py-2.5 flex items-center justify-between text-sm">
                     <div>
                       <p className="font-medium text-gray-900">{PLAN_NAMES[order.plan] || order.plan}</p>
-                      <p className="text-xs text-gray-400">{order.price} · {order.userId.slice(0, 12)}... · {new Date(order.confirmed_at || order.created_at).toLocaleString('zh-CN')}</p>
+                      <p className="text-xs text-gray-400">{order.price} · <span className="font-mono text-xs">{order.userId}</span> · {new Date(order.confirmed_at || order.created_at).toLocaleString('zh-CN')}</p>
                     </div>
                   </div>
                 ))}
@@ -457,7 +457,7 @@ export default function AdminPage() {
                 <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">用户 {lookupResult.userId.slice(0, 16)}...</p>
+                      <p className="text-sm font-medium text-gray-900 break-all">用户 {lookupResult.userId}</p>
                       <p className="text-sm text-gray-500 mt-0.5">当前余额：<strong className="text-blue-700">{lookupResult.balance}</strong> 次</p>
                     </div>
                   </div>

@@ -45,19 +45,70 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: '产品想法描述过长，请精简到 5000 字以内' }, { status: 400 });
   }
 
+  // Support non-streaming mode for WeChat Mini Program
+  const url = new URL(request.url);
+  const mode = url.searchParams.get('mode');
+
+  if (mode === 'json') {
+    try {
+      const report = await generateFullReport(idea);
+      if (report.has_search_data === undefined) report.has_search_data = false;
+      saveValidation(idea, report).catch(() => {});
+      return Response.json({ success: true, report });
+    } catch (error) {
+      console.error('Validation error:', error);
+      return Response.json({ error: '验证失败' }, { status: 500 });
+    }
+  }
+
+  // ── Streaming mode (existing web client) ──
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Step 1: Extract structured info
-        controller.enqueue(progressEvent('extracting', '正在分析产品信息...'));
-        const extractResp = await chatCompletion([
-          {
-            role: 'system',
-            content: '你是一个产品分析助手。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。',
-          },
-          {
-            role: 'user',
-            content: `从以下产品想法中提取结构化信息：
+        const report = await generateFullReport(idea, {
+          onExtracting(msg) { controller.enqueue(progressEvent('extracting', msg)); },
+          onSearching(msg) { controller.enqueue(progressEvent('searching', msg)); },
+          onAnalyzing(msg) { controller.enqueue(progressEvent('analyzing', msg)); },
+          onToken(token) { controller.enqueue(tokenEvent(token)); },
+        });
+
+        controller.enqueue(progressEvent('done', '分析完成'));
+        controller.enqueue(resultEvent(report));
+        controller.close();
+      } catch (error) {
+        console.error('Validation error:', error);
+        try {
+          controller.enqueue(errorEvent('验证过程出错了，请稍后重试'));
+        } catch { /* ignore if stream already closed */ }
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'application/x-ndjson' },
+  });
+}
+
+interface ProgressCallbacks {
+  onExtracting?: (msg: string) => void;
+  onSearching?: (msg: string) => void;
+  onAnalyzing?: (msg: string) => void;
+  onToken?: (token: string) => void;
+}
+
+async function generateFullReport(idea: string, cb?: ProgressCallbacks): Promise<ValidationReport> {
+  // Step 1: Extract structured info
+  if (cb?.onExtracting) cb.onExtracting('正在分析产品信息...');
+  const extractResp = await chatCompletion([
+    {
+      role: 'system',
+      content: '你是一个产品分析助手。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。',
+    },
+    {
+      role: 'user',
+      content: `从以下产品想法中提取结构化信息：
 
 产品想法：${idea}
 
@@ -68,50 +119,50 @@ export async function POST(request: NextRequest) {
   "industry": "所属行业",
   "keywords": ["搜索关键词1", "搜索关键词2", "搜索关键词3"]
 }`,
-          },
-        ], { temperature: 0.3 });
+    },
+  ], { temperature: 0.3 });
 
-        let extracted: { target_users: string; core_features: string; industry: string; keywords: string[] };
-        try {
-          extracted = JSON.parse(extractResp);
-        } catch {
-          extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
-        }
+  let extracted: { target_users: string; core_features: string; industry: string; keywords: string[] };
+  try {
+    extracted = JSON.parse(extractResp);
+  } catch {
+    extracted = { target_users: '', core_features: '', industry: '', keywords: [idea.substring(0, 20)] };
+  }
 
-        controller.enqueue(progressEvent('extracting', extracted.target_users ? `目标用户：${extracted.target_users.substring(0, 30)}` : ''));
+  if (cb?.onExtracting) cb.onExtracting(extracted.target_users ? `目标用户：${extracted.target_users.substring(0, 30)}` : '');
 
-        // Step 2: Search for competitors
-        const searchResults: { name: string; snippet: string; url: string }[] = [];
-        const keywords = (extracted.keywords || []).slice(0, 3);
-        for (let i = 0; i < keywords.length; i++) {
-          controller.enqueue(progressEvent('searching', `搜索第 ${i + 1}/${keywords.length} 组关键词`));
-          try {
-            const results = await search(keywords[i], 5);
-            searchResults.push(...results);
-            controller.enqueue(progressEvent('searching', `发现 ${searchResults.length} 个相关结果`));
-          } catch {
-            // continue if one keyword fails
-          }
-        }
+  // Step 2: Search for competitors
+  const searchResults: { name: string; snippet: string; url: string }[] = [];
+  const keywords = (extracted.keywords || []).slice(0, 3);
+  for (let i = 0; i < keywords.length; i++) {
+    if (cb?.onSearching) cb.onSearching(`搜索第 ${i + 1}/${keywords.length} 组关键词`);
+    try {
+      const results = await search(keywords[i], 5);
+      searchResults.push(...results);
+      if (cb?.onSearching) cb.onSearching(`发现 ${searchResults.length} 个相关结果`);
+    } catch {
+      // continue if one keyword fails
+    }
+  }
 
-        const searchText = searchResults.length > 0
-          ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
-          : '未找到直接竞品（基于自身知识分析）';
+  const searchText = searchResults.length > 0
+    ? searchResults.slice(0, 15).map(r => `- ${r.name}：${r.snippet}（来源：${r.url}）`).join('\n')
+    : '未找到直接竞品（基于自身知识分析）';
 
-        // Step 3: Analyze search data
-        controller.enqueue(progressEvent('analyzing', `搜索到 ${searchResults.length} 个竞品，正在分析数据`));
+  // Step 3: Analyze search data
+  if (cb?.onAnalyzing) cb.onAnalyzing(`搜索到 ${searchResults.length} 个竞品，正在分析数据`);
 
-        // Step 4: Generate validation report (streaming)
-        controller.enqueue(progressEvent('generating', 'AI 正在撰写报告...'));
-        let reportText = '';
-        for await (const token of chatCompletionStream([
-          {
-            role: 'system',
-            content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-10 分，支持1位小数。',
-          },
-          {
-            role: 'user',
-            content: `请分析以下产品方向的可行性，生成验证报告。
+  // Step 4: Generate validation report
+  if (cb?.onToken) cb.onToken('');
+  let reportText = '';
+  for await (const token of chatCompletionStream([
+    {
+      role: 'system',
+      content: '你是一个专业的产品市场分析师。只输出合法的 JSON，不要包含 markdown 代码块标记或其他文字。用数值评分时 0-10 分，支持1位小数。',
+    },
+    {
+      role: 'user',
+      content: `请分析以下产品方向的可行性，生成验证报告。
 
 产品想法：${idea}
 目标用户：${extracted.target_users || '待确定'}
@@ -179,40 +230,20 @@ ${searchText}
   "tech_assessment": "技术实现评估（需要的技术栈、最难的模块、有没有现成的开源方案可参考）",
   "mvp_timeline": "MVP 落地时间线建议（分几个阶段、每个阶段做什么、大概需要多久）"
 }`,
-          },
-        ], { temperature: 0.5 })) {
-          reportText += token;
-          controller.enqueue(tokenEvent(token));
-        }
-
-        let report: ValidationReport;
-        try {
-          report = JSON.parse(reportText);
-        } catch {
-          controller.enqueue(errorEvent('AI 分析结果异常，请稍后重试'));
-          controller.close();
-          return;
-        }
-
-        report.has_search_data = searchResults.length > 0;
-
-        // Save to recent validations (fire-and-forget)
-        saveValidation(idea, report).catch(() => {});
-
-        controller.enqueue(progressEvent('done', '分析完成'));
-        controller.enqueue(resultEvent(report));
-        controller.close();
-      } catch (error) {
-        console.error('Validation error:', error);
-        try {
-          controller.enqueue(errorEvent('验证过程出错了，请稍后重试'));
-        } catch { /* ignore if stream already closed */ }
-        controller.close();
-      }
     },
-  });
+  ], { temperature: 0.5 })) {
+    reportText += token;
+    if (cb?.onToken) cb.onToken(token);
+  }
 
-  return new Response(stream, {
-    headers: { 'Content-Type': 'application/x-ndjson' },
-  });
+  let report: ValidationReport;
+  try {
+    report = JSON.parse(reportText);
+  } catch {
+    throw new Error('AI 分析结果异常');
+  }
+
+  report.has_search_data = searchResults.length > 0;
+  saveValidation(idea, report).catch(() => {});
+  return report;
 }

@@ -40,6 +40,7 @@ function starRating(avg: number): string {
 }
 
 export default function ReportView({ report, idea, onReset, onGeneratePrd, prdLoading, onPmConsult, pmConsultOpen, onShare, sharing, onViewPrd }: ReportViewProps) {
+  const [cardLoading, setCardLoading] = useState(false);
   const verdictStyle = VERDICT_STYLES[report.verdict] || VERDICT_STYLES['值得探索'];
   const verdictIcon = VERDICT_ICONS[report.verdict] || '🟡';
 
@@ -192,6 +193,36 @@ ${sectionsHtml}
     if (win) {
       win.document.write(printHtml);
       win.document.close();
+    }
+  };
+
+  const handleShareCard = async () => {
+    setCardLoading(true);
+    try {
+      const res = await fetch('/api/share-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea: idea || '',
+          verdict: report.verdict,
+          market_score: report.market_score,
+          feasibility_score: report.feasibility_score,
+          sharp_comment: report.sharp_comment,
+          summary: report.summary,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `芥子-${report.verdict}-卡片.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open('/api/share-card', '_blank');
+    } finally {
+      setCardLoading(false);
     }
   };
 
@@ -450,6 +481,14 @@ ${sectionsHtml}
               {sharing ? '生成链接...' : '分享'}
             </button>
           )}
+          <button
+            onClick={handleShareCard}
+            disabled={cardLoading}
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            {cardLoading ? '生成中...' : '分享卡片'}
+          </button>
           {onPmConsult && (
             <button
               onClick={onPmConsult}
