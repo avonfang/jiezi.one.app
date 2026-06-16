@@ -50,48 +50,52 @@ function generateCard({ idea, verdict, market_score, feasibility_score, summary 
     (
       <div style={{
         width: 800, height: 1000, display: 'flex', flexDirection: 'column',
-        backgroundColor: '#1A1040', fontFamily: 'sans-serif', padding: 60,
+        backgroundColor: '#1A1040', fontFamily: 'sans-serif', padding: 48,
       }}>
         {/* Brand */}
-        <div style={{ display: 'flex', marginBottom: 60, alignItems: 'center' }}>
+        <div style={{ display: 'flex', marginBottom: 40, alignItems: 'center' }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8E2DE2', marginRight: 12 }} />
-          <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
+          <span style={{ fontSize: 22, fontWeight: 700, color: '#FFFFFF' }}>芥子</span>
         </div>
 
-        {/* Verdict */}
+        {/* Glass card wrapper */}
         <div style={{
-          display: 'flex', paddingTop: 12, paddingBottom: 12, paddingLeft: 28, paddingRight: 28,
-          borderRadius: 999, backgroundColor: vs.bg, color: vs.text,
-          fontSize: 24, fontWeight: 700, marginBottom: 40,
+          display: 'flex', flexDirection: 'column', flex: 1,
+          padding: 44, borderRadius: 32,
+          backgroundColor: 'rgba(255,255,255,0.06)',
         }}>
-          {verdict}
-        </div>
-
-        {/* Idea */}
-        <div style={{ fontSize: 42, color: '#FFFFFF', fontWeight: 700, lineHeight: 1.4, marginBottom: oneLiner ? 32 : 0 }}>
-          {idea}
-        </div>
-
-        {/* One-liner */}
-        {oneLiner && (
+          {/* Verdict */}
           <div style={{
-            display: 'flex', marginTop: 48, paddingTop: 32, paddingBottom: 32, paddingLeft: 28, paddingRight: 28,
-            borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)',
+            display: 'flex', paddingTop: 10, paddingBottom: 10, paddingLeft: 22, paddingRight: 22,
+            borderRadius: 999, backgroundColor: vs.bg, color: vs.text,
+            fontSize: 20, fontWeight: 700, marginBottom: 32,
           }}>
-            <span style={{ fontSize: 22, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{oneLiner}</span>
+            {verdict}
           </div>
-        )}
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
+          {/* Idea */}
+          <div style={{ fontSize: 36, color: '#FFFFFF', fontWeight: 800, lineHeight: 1.35, marginBottom: oneLiner ? 16 : 0 }}>
+            {idea}
+          </div>
 
-        {/* Footer */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', paddingTop: 36,
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-        }}>
-          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>JIEZI</span>
-          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>AI 分析仅供参考</span>
+          {/* One-liner */}
+          {oneLiner && (
+            <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginTop: 12 }}>
+              {oneLiner}
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Footer inside card */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', paddingTop: 32,
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>用小想法，创造大未来</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>JIEZI.ONE</span>
+          </div>
         </div>
       </div>
     ),
