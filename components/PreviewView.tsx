@@ -50,8 +50,17 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
   // Sanitize AI-generated HTML to prevent XSS
   const sanitizedHtml = useMemo(() => DOMPurify.sanitize(preview.html), [preview.html]);
 
-  // Inject auto-height script into the sanitized preview HTML
-  const srcDoc = sanitizedHtml.replace(
+  // Inject prebuilt Tailwind CSS + auto-height script into the preview HTML
+  const cssLink = '<link rel="stylesheet" href="/tailwind/prebuilt.css">';
+  let srcDoc: string;
+  if (/<\/head>/i.test(sanitizedHtml)) {
+    srcDoc = sanitizedHtml.replace('</head>', `${cssLink}</head>`);
+  } else if (/<html[^>]*>/i.test(sanitizedHtml)) {
+    srcDoc = sanitizedHtml.replace(/(<html[^>]*>)/i, `$1<head>${cssLink}</head>`);
+  } else {
+    srcDoc = `${cssLink}${sanitizedHtml}`;
+  }
+  srcDoc = srcDoc.replace(
     '</body>',
     `<script>window.addEventListener('load',function(){
       var h=document.documentElement.scrollHeight;
