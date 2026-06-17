@@ -50,17 +50,16 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
   // Sanitize AI-generated HTML to prevent XSS
   const sanitizedHtml = useMemo(() => DOMPurify.sanitize(preview.html), [preview.html]);
 
-  // Inject prebuilt Tailwind CSS + auto-height script into the preview HTML
+  // Inject prebuilt Tailwind CSS into the preview HTML
   const cssLink = '<link rel="stylesheet" href="/tailwind/prebuilt.css">';
-  let srcDoc: string;
-  if (/<\/head>/i.test(sanitizedHtml)) {
-    srcDoc = sanitizedHtml.replace('</head>', `${cssLink}</head>`);
-  } else if (/<html[^>]*>/i.test(sanitizedHtml)) {
-    srcDoc = sanitizedHtml.replace(/(<html[^>]*>)/i, `$1<head>${cssLink}</head>`);
-  } else {
-    srcDoc = `${cssLink}${sanitizedHtml}`;
-  }
-  srcDoc = srcDoc.replace(
+  const injectCss = (html: string) => {
+    if (/<\/head>/i.test(html)) return html.replace('</head>', `${cssLink}</head>`);
+    if (/<html[^>]*>/i.test(html)) return html.replace(/(<html[^>]*>)/i, `$1<head>${cssLink}</head>`);
+    return `${cssLink}${html}`;
+  };
+  const enrichedHtml = injectCss(sanitizedHtml);
+  // Add auto-height script
+  const srcDoc = enrichedHtml.replace(
     '</body>',
     `<script>window.addEventListener('load',function(){
       var h=document.documentElement.scrollHeight;
@@ -88,7 +87,7 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
       // fallback: open in new window for manual save
       const win = window.open('', '_blank');
       if (win) {
-        win.document.write(sanitizedHtml);
+        win.document.write(enrichedHtml);
         win.document.close();
       }
     } finally {
@@ -163,7 +162,7 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
             onClick={() => {
               const win = window.open('', '_blank');
               if (win) {
-                win.document.write(sanitizedHtml);
+                win.document.write(enrichedHtml);
                 win.document.close();
               }
             }}
