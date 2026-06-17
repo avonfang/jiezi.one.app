@@ -25,24 +25,26 @@ export default function DemoView({ html, onBack }: DemoViewProps) {
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">产品演示</h2>
-          <p className="text-sm text-gray-500">芥子使用流程动画展示</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownload}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-          >
-            下载演示
-          </button>
+        <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             返回
           </button>
+          <div className="h-4 w-px bg-gray-200" />
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">产品演示</h2>
+            <p className="text-sm text-gray-500">芥子使用流程动画展示</p>
+          </div>
         </div>
+        <button
+          onClick={handleDownload}
+          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          下载演示
+        </button>
       </div>
 
       <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">

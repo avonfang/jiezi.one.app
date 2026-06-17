@@ -69,6 +69,15 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
 
   return (
     <div className="w-full max-w-2xl mx-auto">
+      {/* Top-left back button */}
+      <button
+        onClick={onReset}
+        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        返回
+      </button>
+
       {/* Core summary card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Gradient top bar */}
@@ -179,12 +188,6 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               {cardLoading ? '生成中...' : '分享卡片'}
-            </button>
-            <button
-              onClick={onReset}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors ml-auto"
-            >
-              返回
             </button>
           </div>
         </div>

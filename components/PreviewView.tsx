@@ -100,9 +100,19 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
     <div className="w-full max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{preview.product_name}</h2>
-          <p className="text-sm text-gray-500">产品预览</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            返回
+          </button>
+          <div className="h-4 w-px bg-gray-200" />
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{preview.product_name}</h2>
+            <p className="text-sm text-gray-500">产品预览</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -144,14 +154,6 @@ export default function PreviewView({ preview, onBack, onRegenerate, regenerateL
               )}
             </div>
           )}
-
-          {/* Back */}
-          <button
-            onClick={onBack}
-            className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            返回
-          </button>
         </div>
       </div>
 
