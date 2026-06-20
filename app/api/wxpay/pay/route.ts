@@ -20,7 +20,16 @@ export async function POST(request: NextRequest) {
     if (!cfg) return Response.json({ error: '无效的套餐' }, { status: 400 });
     if (!userId) return Response.json({ error: '缺少用户标识' }, { status: 400 });
 
-    // Dev mode: auto-confirm order without real payment
+    // Demo mode: auto-confirm when WeChat Pay credentials are not configured
+    const hasWeChatCreds = !!(process.env.WX_APPID && process.env.WX_SECRET);
+    if (!hasWeChatCreds) {
+      const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'demo');
+      await confirmOrder(order.id);
+      console.log(`Demo mode: auto-confirmed order ${order.id} for user ${userId} (no WX_APPID)`);
+      return Response.json({ success: true, orderId: order.id });
+    }
+
+    // Dev mode: auto-confirm when XORPay is not configured
     let xorpayConfigured = false;
     try { getXorpayConfig(); xorpayConfigured = true; } catch {}
     if (!xorpayConfigured) {
