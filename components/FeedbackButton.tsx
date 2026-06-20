@@ -34,7 +34,7 @@ export default function FeedbackButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-40 bg-white border border-gray-200 rounded-full shadow-lg px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-all"
+        className="fixed bottom-4 right-4 z-40 px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-all" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:'9999px', boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}
       >
         反馈
       </button>
@@ -68,7 +68,7 @@ export default function FeedbackButton() {
                 <button
                   onClick={handleSubmit}
                   disabled={content.trim().length < 2 || submitting}
-                  className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mt-3"
+                  className="w-full rounded-xl gradient-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all mt-3" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
                 >
                   {submitting ? '提交中...' : '提交反馈'}
                 </button>

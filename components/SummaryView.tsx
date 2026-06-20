@@ -68,7 +68,7 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Top-left back button */}
       <button
         onClick={onReset}
@@ -159,7 +159,7 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
           <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-gray-100">
             <button
               onClick={onViewReport}
-              className="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-5 py-2.5 text-sm font-medium text-white hover:from-emerald-600 hover:to-green-600 transition-all shadow-sm"
+              className="rounded-xl gradient-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
             >
               查看完整报告
             </button>
@@ -167,16 +167,16 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
               <button
                 onClick={onGeneratePrd}
                 disabled={prdLoading}
-                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                className="rounded-xl gradient-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all flex items-center gap-1.5" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
               >
                 {prdLoading ? '生成中...' : '生成 PRD'}
-                {!prdLoading && <span className="text-xs text-blue-200 font-normal">(⚡️消耗2积分)</span>}
+                {!prdLoading && <span className="text-xs text-white/60 font-normal">(⚡️消耗2积分)</span>}
               </button>
             )}
             {onPmConsult && (
               <button
                 onClick={onPmConsult}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                className="rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 active:scale-[0.98] transition-all" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
               >
                 追问深入分析
               </button>
@@ -184,7 +184,7 @@ export default function SummaryView({ report, idea, onViewReport, onGeneratePrd,
             <button
               onClick={handleShareCard}
               disabled={cardLoading}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 disabled:opacity-50 active:scale-[0.98] transition-all flex items-center gap-1.5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               {cardLoading ? '生成中...' : '分享卡片'}

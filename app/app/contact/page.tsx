@@ -2,11 +2,11 @@
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 to-white">
+    <div className="min-h-screen" style={{background:'var(--bg-gradient)'}}>
       <div className="max-w-lg mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-200">
+          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg" style={{boxShadow:'0 4px 20px rgba(79,139,255,0.25)'}}>
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
@@ -18,9 +18,9 @@ export default function ContactPage() {
         </div>
 
         {/* 你将获得 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4 shadow-sm">
+        <div className="rounded-2xl p-6 mb-4 liquid-glass">
           <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4F8BFF]" />
             你将获得
           </h2>
           <div className="space-y-4">
@@ -55,7 +55,7 @@ export default function ContactPage() {
         </div>
 
         {/* 我们需要这样的你 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+        <div className="rounded-2xl p-6 mb-6 liquid-glass">
           <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             我们需要这样的你
@@ -75,7 +75,7 @@ export default function ContactPage() {
         {/* QR Code */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm text-center">
           <h2 className="text-base font-bold text-gray-900 mb-4">扫码加入内测群</h2>
-          <div className="w-56 mx-auto bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-3" style={{ maxHeight: '440px' }}>
+          <div className="w-56 mx-auto rounded-xl overflow-hidden mb-3 liquid-glass" style={{maxHeight:'440px', padding:'4px'}}>
             <img src="/contact-qr.png" alt="内测群二维码" className="w-full h-full object-contain" />
           </div>
           <p className="text-xs text-gray-400">

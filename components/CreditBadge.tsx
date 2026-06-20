@@ -37,7 +37,7 @@ export default function CreditBadge() {
   return (
     <a
       href="/pricing"
-      className="text-xs text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-full px-3 py-1.5 border border-gray-200 transition-colors"
+      className="text-xs rounded-full px-3 py-1.5 transition-all" style={{color:'rgba(0,0,0,0.45)', background:'rgba(79,139,255,0.06)', border:'1px solid rgba(79,139,255,0.1)', backdropFilter:'blur(8px)'}}
     >
       剩余 {balance} 积分
     </a>

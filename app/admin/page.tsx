@@ -31,8 +31,8 @@ function AdminLogin({ onLogin }: { onLogin: (password: string) => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl border border-gray-200 p-8 w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center" style={{background:'var(--bg-gradient)'}}>
+      <div className="w-full max-w-sm p-8 rounded-xl" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
         <div className="text-center mb-6">
           <h1 className="text-lg font-bold text-gray-900">管理后台</h1>
           <p className="text-sm text-gray-500 mt-1">请输入密码</p>
@@ -49,7 +49,7 @@ function AdminLogin({ onLogin }: { onLogin: (password: string) => void }) {
         <button
           onClick={handleSubmit}
           disabled={!pw || loading}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded-xl gradient-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
         >
           {loading ? '验证中...' : '进入后台'}
         </button>
@@ -82,6 +82,7 @@ interface ActivationCode {
 
 interface FeedbackItem {
   id: string;
+  type: string;
   content: string;
   contact: string;
   created_at: number;
@@ -239,7 +240,7 @@ export default function AdminPage() {
   if (!authed) return <AdminLogin onLogin={handleLogin} />;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen p-8" style={{background:'var(--bg-gradient)'}}>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
@@ -251,7 +252,7 @@ export default function AdminPage() {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`text-sm px-3 py-1 rounded ${tab === key ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`text-sm px-3 py-1 rounded-xl active:scale-[0.98] transition-all ${tab === key ? 'gradient-primary text-white' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {label}
               </button>
@@ -262,7 +263,7 @@ export default function AdminPage() {
         {/* ====== Users Tab ====== */}
         {tab === 'users' && (
           <div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div className="rounded-xl p-5 mb-6" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-semibold text-gray-900">注册用户</h2>
                 <span className="text-sm text-gray-500">共 {users.length} 人</span>
@@ -301,7 +302,7 @@ export default function AdminPage() {
             </div>
             <button
               onClick={loadUsers}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="text-sm hover:text-[#4F8BFF] transition-colors" style={{color:'rgba(79,139,255,0.8)'}}
             >
               刷新
             </button>
@@ -311,7 +312,7 @@ export default function AdminPage() {
         {/* ====== Activation Codes Tab ====== */}
         {tab === 'codes' && (
           <>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div className="rounded-xl p-5 mb-6" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
               <h2 className="font-semibold text-gray-900 mb-3">生成激活码</h2>
               <div className="flex items-end gap-3 flex-wrap">
                 <div>
@@ -326,7 +327,7 @@ export default function AdminPage() {
                   <label className="block text-xs text-gray-500 mb-1">数量</label>
                   <input type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(parseInt(e.target.value) || 1)} className="rounded-lg border border-gray-200 px-3 py-2 text-sm w-20 outline-none" />
                 </div>
-                <button onClick={handleGenerate} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                <button onClick={handleGenerate} className="rounded-xl gradient-primary px-5 py-2 text-sm font-medium text-white active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}>
                   生成
                 </button>
               </div>
@@ -385,7 +386,7 @@ export default function AdminPage() {
                         {new Date(order.created_at).toLocaleString('zh-CN')} · <span className="font-mono text-xs">{order.userId}</span>
                       </div>
                     </div>
-                    <button onClick={() => handleConfirm(order.id)} className="shrink-0 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors">确认到账</button>
+                    <button onClick={() => handleConfirm(order.id)} className="shrink-0 rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 active:scale-[0.98] transition-all">确认到账</button>
                   </div>
                 ))}
               </div>
@@ -416,7 +417,10 @@ export default function AdminPage() {
               {feedbacks.map((f, i) => (
                 <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">{f.content}</p>
+                    <div className="flex-1 min-w-0">
+                      {f.type && <span className="inline-block text-xs font-medium text-blue-600 bg-blue-50 rounded-full px-2.5 py-0.5 mb-2">{f.type}</span>}
+                      <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">{f.content}</p>
+                    </div>
                     <span className="shrink-0 text-xs text-gray-400">{new Date(f.created_at).toLocaleString('zh-CN')}</span>
                   </div>
                   {f.contact && (
@@ -431,7 +435,7 @@ export default function AdminPage() {
         {/* ====== Credits Management Tab ====== */}
         {tab === 'credits' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
               <h2 className="font-semibold text-gray-900 mb-3">查询用户次数</h2>
               <div className="flex items-end gap-3 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
@@ -444,7 +448,7 @@ export default function AdminPage() {
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
                   />
                 </div>
-                <button onClick={handleLookup} disabled={!lookupUserId.trim() || lookupLoading} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                <button onClick={handleLookup} disabled={!lookupUserId.trim() || lookupLoading} className="rounded-xl gradient-primary px-5 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}>
                   {lookupLoading ? '查询中...' : '查询'}
                 </button>
               </div>
@@ -473,7 +477,7 @@ export default function AdminPage() {
                         className="rounded-lg border border-gray-200 px-3 py-2 text-sm w-24 outline-none focus:border-blue-400"
                       />
                     </div>
-                    <button onClick={handleAddCredits} disabled={!addAmount || lookupLoading} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                    <button onClick={handleAddCredits} disabled={!addAmount || lookupLoading} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all">
                       增加
                     </button>
                   </div>

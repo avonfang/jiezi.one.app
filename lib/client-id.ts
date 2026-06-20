@@ -1,18 +1,37 @@
 const TOKEN_KEY = 'jiezi-auth-token';
 
+function safeGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getClientId(): string {
   if (typeof window === 'undefined') return '';
 
   // Check for registered user first
-  const userId = localStorage.getItem('jiezi-user-id');
+  const userId = safeGet('jiezi-user-id');
   if (userId) return userId;
 
   // Fall back to anonymous client ID
-  let id = localStorage.getItem('jiezi-client-id');
-  if (!id) {
-    id = crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2);
-    localStorage.setItem('jiezi-client-id', id);
-  }
+  let id = safeGet('jiezi-client-id');
+  if (id) return id;
+
+  // Generate new anonymous ID
+  id = crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  safeSet('jiezi-client-id', id);
+
   return id;
 }
 

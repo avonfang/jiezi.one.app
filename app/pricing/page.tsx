@@ -145,15 +145,15 @@ export default function PricingPage() {
     switch (paymentState) {
       case 'creating':
         return (
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-            <div className="w-10 h-10 rounded-full border-2 border-emerald-200 border-t-emerald-500 animate-spin mx-auto mb-4" />
+          <div className="rounded-xl p-8 text-center liquid-glass glass-sm">
+            <div className="w-10 h-10 rounded-full border-2 animate-spin mx-auto mb-4" style={{borderColor:'rgba(79,139,255,0.15)', borderTopColor:'#4F8BFF'}} />
             <p className="text-gray-600">正在创建支付订单...</p>
           </div>
         );
       case 'qr':
         return (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-5 text-center text-white">
+          <div className="rounded-2xl overflow-hidden liquid-glass" style={{padding:0}}>
+            <div className="gradient-primary px-6 py-5 text-center text-white">
               <p className="text-sm font-medium text-white/80">{selectedPlanData?.name}</p>
               <p className="text-2xl font-bold mt-0.5">{selectedPlanData?.price}</p>
               <p className="text-xs text-white/60 mt-1">{selectedPlanData?.unit_price}</p>
@@ -164,7 +164,7 @@ export default function PricingPage() {
                 <ul className="space-y-1.5">
                   {selectedPlanData?.features.map((f, i) => (
                     <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                      <svg className="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{color:'#4F8BFF'}}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                       {f}
@@ -175,17 +175,17 @@ export default function PricingPage() {
               <div className="text-center border-t border-gray-50 pt-4">
                 <p className="text-xs text-gray-400 mb-3">{selectedPlanData?.credits} · 付款后自动到账</p>
                 {qrDataUrl ? (
-                  <div className="w-52 h-52 mx-auto bg-white border border-gray-100 rounded-xl p-3 shadow-sm mb-4">
-                    <img src={qrDataUrl} alt="支付二维码" className="w-full h-full" />
+                  <div className="w-52 h-52 mx-auto rounded-xl p-3 mb-4 liquid-glass" style={{padding:'8px'}}>
+                    <img src={qrDataUrl} alt="支付二维码" className="w-full h-full" style={{borderRadius:'8px'}} />
                   </div>
                 ) : (
-                  <div className="w-52 h-52 mx-auto bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center mb-4">
-                    <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-400 animate-spin" />
+                  <div className="w-52 h-52 mx-auto rounded-xl flex items-center justify-center mb-4" style={{background:'rgba(255,255,255,0.2)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
+                    <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{borderColor:'rgba(79,139,255,0.15)', borderTopColor:'#4F8BFF'}} />
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mb-4">二维码有效期 2 小时</p>
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse-glow" style={{background:'#4F8BFF'}} />
                   等待支付中...
                 </div>
               </div>
@@ -194,22 +194,22 @@ export default function PricingPage() {
         );
       case 'success':
         return (
-          <div className="bg-white border border-emerald-100 rounded-2xl p-8 text-center shadow-sm">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-2xl p-8 text-center liquid-glass glass-lg">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{background:'rgba(79,139,255,0.08)'}}>
+              <svg className="w-7 h-7" fill="none" stroke="#4F8BFF" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-1">支付成功</h2>
-            <p className="text-sm text-emerald-600 mb-2">积分已到账，现在可以开始验证产品想法了</p>
+            <p className="text-sm mb-2" style={{color:'#4F8BFF'}}>积分已到账，现在可以开始验证产品想法了</p>
             {balance !== null && (
               <p className="text-sm text-gray-500 mb-6">当前剩余 <strong>{balance}</strong> 积分</p>
             )}
             <div className="flex items-center justify-center gap-3">
-              <a href="/" className="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-2.5 text-sm font-medium text-white hover:from-emerald-600 hover:to-green-600 transition-all shadow-sm">
+              <a href="/" className="rounded-xl gradient-primary px-6 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98]" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}>
                 开始验证
               </a>
-              <button onClick={handleReset} className="rounded-lg border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              <button onClick={handleReset} className="rounded-xl px-6 py-2.5 text-sm font-medium text-gray-600 active:scale-[0.98] transition-all" style={{border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.3)'}}>
                 继续购买
               </button>
             </div>
@@ -217,10 +217,10 @@ export default function PricingPage() {
         );
       case 'error':
         return (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-600 font-medium mb-2">支付创建失败</p>
-            <p className="text-sm text-red-500 mb-4">{error}</p>
-            <button onClick={() => setPaymentState('idle')} className="rounded-lg border border-red-300 px-6 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
+          <div className="rounded-xl p-6 text-center" style={{background:'rgba(255,69,58,0.06)', border:'1px solid rgba(255,69,58,0.15)'}}>
+            <p className="font-medium mb-2" style={{color:'#FF453A'}}>支付创建失败</p>
+            <p className="text-sm mb-4" style={{color:'rgba(255,69,58,0.7)'}}>{error}</p>
+            <button onClick={() => setPaymentState('idle')} className="rounded-lg px-6 py-2 text-sm font-medium transition-colors" style={{border:'1px solid rgba(255,69,58,0.2)', color:'#FF453A', background:'rgba(255,69,58,0.04)'}}>
               重新选择
             </button>
           </div>
@@ -231,7 +231,7 @@ export default function PricingPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 to-white">
+    <div className="min-h-screen" style={{background:'var(--bg-gradient)'}}>
       <div className="max-w-3xl mx-auto px-4 py-16">
         <div className="text-center mb-4">
           <a href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 mb-8">
@@ -244,8 +244,8 @@ export default function PricingPage() {
         </div>
 
         {balance !== null && balance > 0 && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center mb-8 max-w-md mx-auto">
-            <p className="text-emerald-700">你还有 <strong>{balance}</strong> 积分</p>
+          <div className="rounded-xl p-4 text-center mb-8 max-w-md mx-auto liquid-glass glass-sm">
+            <p style={{color:'#4F8BFF'}}>你还有 <strong>{balance}</strong> 积分</p>
           </div>
         )}
 
@@ -253,14 +253,14 @@ export default function PricingPage() {
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`bg-white rounded-xl border-2 p-5 transition-all relative ${
+              className={`rounded-xl p-5 transition-all relative liquid-glass ${
                 selectedPlan === plan.id
-                  ? 'border-emerald-400 shadow-lg shadow-emerald-100'
-                  : 'border-gray-100'
+                  ? 'ring-2 ring-[#4F8BFF]'
+                  : ''
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[10px] font-semibold px-3 py-0.5 rounded-full shadow-sm">
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 gradient-primary text-white text-[10px] font-semibold px-3 py-0.5 rounded-full shadow-sm">
                   推荐
                 </div>
               )}
@@ -268,13 +268,13 @@ export default function PricingPage() {
                 <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{plan.price}</p>
                 <p className="text-sm text-gray-400 mt-0.5">{plan.credits}</p>
-                <p className="text-xs text-emerald-500 font-medium mt-0.5">{plan.unit_price}</p>
+                <p className="text-xs font-medium mt-0.5" style={{color:'#4F8BFF'}}>{plan.unit_price}</p>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-50">
                 <ul className="space-y-2">
                   {plan.features.map((f, i) => (
                     <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                      <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{color:'#4F8BFF'}}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                       {f}
@@ -284,11 +284,11 @@ export default function PricingPage() {
               </div>
               <button
                 onClick={() => handleStartPayment(plan.id)}
-                className={`w-full mt-4 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                className={`w-full mt-4 rounded-xl py-2.5 text-sm font-medium transition-all active:scale-[0.98] ${
                   plan.popular
-                    ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white hover:from-emerald-600 hover:to-green-600 shadow-sm'
-                    : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
+                    ? 'gradient-primary text-white shadow-sm'
+                    : 'border text-gray-600'
+                }`} style={plan.popular ? {boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'} : {borderColor:'rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.3)'}}
               >
                 立即购买
               </button>
@@ -298,27 +298,27 @@ export default function PricingPage() {
 
         {/* 积分加油包 */}
         <div className="max-w-lg mx-auto mb-8">
-          <div className="bg-white rounded-xl border-2 border-amber-100 p-5">
+          <div className="rounded-xl p-5 liquid-glass">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-lg">⛽</span>
+              <span className="text-lg" style={{filter:'drop-shadow(0 1px 2px rgba(79,139,255,0.2))'}}>⚡</span>
               <h3 className="text-base font-semibold text-gray-900">积分加油包</h3>
-              <span className="text-[10px] text-amber-500 font-medium bg-amber-50 px-2 py-0.5 rounded-full">灵活补充</span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{color:'#4F8BFF', background:'rgba(79,139,255,0.08)'}}>灵活补充</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => handleStartPayment('topup_small')}
-                className="border border-amber-200 rounded-xl p-4 text-center hover:bg-amber-50 transition-colors"
+                className="rounded-xl p-4 text-center transition-all" style={{border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)'}}
               >
                 <p className="text-2xl font-bold text-gray-900">¥2.90</p>
-                <p className="text-sm text-amber-600 font-medium mt-1">3 积分</p>
+                <p className="text-sm font-medium mt-1" style={{color:'#4F8BFF'}}>3 积分</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">¥0.97/积分</p>
               </button>
               <button
                 onClick={() => handleStartPayment('topup_large')}
-                className="border border-amber-300 bg-amber-50/30 rounded-xl p-4 text-center hover:bg-amber-50 transition-colors"
+                className="rounded-xl p-4 text-center transition-all" style={{border:'1px solid rgba(79,139,255,0.2)', background:'rgba(79,139,255,0.06)', backdropFilter:'blur(8px)'}}
               >
                 <p className="text-2xl font-bold text-gray-900">¥3.90</p>
-                <p className="text-sm text-amber-600 font-medium mt-1">5 积分</p>
+                <p className="text-sm font-medium mt-1" style={{color:'#4F8BFF'}}>5 积分</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">¥0.78/积分</p>
               </button>
             </div>

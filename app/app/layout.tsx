@@ -50,20 +50,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [refreshCredits]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex" style={{background:'var(--bg-gradient)'}}>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-52 bg-white border-r border-gray-100 flex flex-col shrink-0 transition-transform lg:translate-x-0 ${
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-52 border-r border-[rgba(255,255,255,0.3)] liquid-glass flex flex-col shrink-0 transition-transform lg:translate-x-0 ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      }`} style={{borderRadius:0}}>
         {/* Brand — link to homepage */}
-        <Link href="/" className="h-14 flex items-center gap-2 px-5 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-          <span className="text-lg">🌱</span>
-          <span className="font-semibold text-gray-900">芥子</span>
+        <Link href="/" className="h-14 flex items-center gap-2 px-5 border-b border-[rgba(255,255,255,0.3)] transition-colors">
+          <span className="font-semibold gradient-text text-lg">芥子</span>
         </Link>
 
         {/* Nav items */}
@@ -77,8 +76,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   active
-                    ? 'bg-emerald-50 text-emerald-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[rgba(79,139,255,0.08)] text-[#4F8BFF] font-medium'
+                    : 'text-gray-600 hover:bg-[rgba(255,255,255,0.3)]'
                 }`}
               >
                 <span className="text-base">{item.icon}</span>
@@ -89,12 +88,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Bottom section */}
-        <div className="px-4 py-4 border-t border-gray-100 space-y-3">
+        <div className="px-4 py-4 border-t border-[rgba(255,255,255,0.3)] space-y-3">
           {/* Credits */}
           {balance !== null && (
             <Link
               href="/pricing"
-              className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between text-xs rounded-lg px-3 py-2 transition-colors" style={{background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)'}}
             >
               <span className="text-gray-500">剩余</span>
               <span className="font-semibold text-gray-800">{balance} 积分</span>
@@ -116,7 +115,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               href="/app/settings"
               onClick={() => setMobileOpen(false)}
-              className="block text-center text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              className="block text-center text-xs text-gray-400 rounded-lg px-3 py-2 transition-colors" style={{background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)'}}
             >
               登录 / 注册
             </Link>
@@ -127,7 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-30 lg:hidden w-8 h-8 flex items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm"
+        className="fixed top-3 left-3 z-30 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg shadow-sm liquid-glass"
       >
         <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

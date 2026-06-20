@@ -230,7 +230,7 @@ ${sectionsHtml}
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Top-left back button */}
       <button
         onClick={onReset}
@@ -268,9 +268,9 @@ ${sectionsHtml}
 
       {/* Search evidence */}
       {report.competitors && report.competitors.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="rounded-xl p-4" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
-            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="w-3.5 h-3.5 text-[#4F8BFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             AI 搜索发现 {report.competitors.length} 个相关产品
           </div>
           <div className="flex flex-wrap gap-2">
@@ -462,17 +462,17 @@ ${sectionsHtml}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowDownloadMenu(v => !v)}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 active:scale-[0.98] transition-all flex items-center gap-1" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
             >
               下载文件
               <svg className={`w-3.5 h-3.5 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {showDownloadMenu && (
-              <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px]">
-                <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <div className="absolute top-full mt-1 left-0 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px] liquid-glass" style={{padding:0}}>
+                <button onClick={() => { handleDownloadPdf(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[rgba(255,255,255,0.3)] transition-colors">
                   导出为 PDF
                 </button>
-                <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                <button onClick={() => { handleDownloadMarkdown(); setShowDownloadMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[rgba(255,255,255,0.3)] transition-colors border-t border-gray-100">
                   导出为 Markdown
                 </button>
               </div>
@@ -482,7 +482,7 @@ ${sectionsHtml}
             <button
               onClick={onShare}
               disabled={sharing}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 disabled:opacity-50 active:scale-[0.98] transition-all" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
             >
               {sharing ? '生成链接...' : '分享'}
             </button>
@@ -490,7 +490,7 @@ ${sectionsHtml}
           <button
             onClick={handleShareCard}
             disabled={cardLoading}
-            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            className="rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 disabled:opacity-50 active:scale-[0.98] transition-all flex items-center gap-1.5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             {cardLoading ? '生成中...' : '分享卡片'}
@@ -498,11 +498,10 @@ ${sectionsHtml}
           {onPmConsult && (
             <button
               onClick={onPmConsult}
-              className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
                 pmConsultOpen
-                  ? 'bg-gray-100 text-gray-600 border border-gray-300'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+                  ? 'text-gray-600 active:scale-[0.98]' : 'gradient-primary text-white active:scale-[0.98]'
+              }`} style={pmConsultOpen ? {background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'} : {boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
             >
               {pmConsultOpen ? '关闭 PM 顾问' : '追问深入分析'}
             </button>
@@ -511,7 +510,7 @@ ${sectionsHtml}
             <button
               onClick={onViewPrd || onGeneratePrd}
               disabled={prdLoading || false}
-              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              className="rounded-xl gradient-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all flex items-center gap-1.5" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
             >
               {onViewPrd ? '查看 PRD' : prdLoading ? '生成中...' : '生成 PRD'}
               {!onViewPrd && !prdLoading && <span className="text-xs text-blue-200 font-normal">(⚡️消耗2积分)</span>}
@@ -520,6 +519,7 @@ ${sectionsHtml}
         </div>
       </div>
     </div>
+  </div>
   );
 }
 
@@ -559,8 +559,8 @@ function normalizedScore(...scores: number[]): number {
 function SummaryCard({ report, idea }: { report: ValidationReport; idea?: string }) {
   const s = report.summary;
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+    <div className="rounded-xl overflow-hidden liquid-glass">
+      <div className="h-1.5 bg-gradient-to-r from-[#4F8BFF] to-[#7C6CF0]" />
       <div className="p-6">
         {idea && (
           <>

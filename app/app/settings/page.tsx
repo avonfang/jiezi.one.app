@@ -58,21 +58,21 @@ export default function SettingsPage() {
   if (userName) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-            <span className="text-xl">🌱</span>
+        <div className="rounded-2xl w-full max-w-sm p-8 text-center liquid-glass glass-lg">
+          <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center gradient-primary" style={{boxShadow:'0 2px 12px rgba(79,139,255,0.2)'}}>
+            <span className="text-xl">芥</span>
           </div>
           <h2 className="text-lg font-bold text-gray-900 mb-1">{userName}</h2>
           <p className="text-xs text-gray-400 mb-6">已登录</p>
           <a
             href="/app"
-            className="block w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors mb-3"
+            className="block w-full rounded-xl gradient-primary py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] mb-3" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
           >
             返回验证
           </a>
           <button
             onClick={handleLogout}
-            className="w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="w-full rounded-xl py-2.5 text-sm font-medium text-gray-600 active:scale-[0.98] transition-all" style={{border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.3)'}}
           >
             退出登录
           </button>
@@ -83,10 +83,10 @@ export default function SettingsPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm overflow-hidden">
+      <div className="rounded-2xl w-full max-w-sm overflow-hidden liquid-glass">
         <div className="px-6 pt-8 pb-4 text-center">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-            <span className="text-lg">🌱</span>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 gradient-primary">
+            <span className="text-lg text-white font-bold">芥</span>
           </div>
           <h2 className="text-lg font-bold text-gray-900">
             {mode === 'login' ? '登录芥子' : '注册芥子'}
@@ -105,7 +105,7 @@ export default function SettingsPage() {
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               placeholder="输入邮箱"
-              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-all" style={{border:'1px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.5)'}}
             />
           </div>
           <div>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               placeholder="输入密码"
-              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-all" style={{border:'1px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.5)'}}
             />
           </div>
 
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="输入昵称"
-                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-all" style={{border:'1px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.5)'}}
               />
             </div>
           )}
@@ -137,22 +137,22 @@ export default function SettingsPage() {
           <button
             onClick={handleSubmit}
             disabled={!email.trim() || !password || loading}
-            className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl gradient-primary py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
           >
             {loading ? '处理中...' : mode === 'login' ? '登录' : '注册'}
           </button>
 
           <p className="text-center text-xs text-gray-400">
             {mode === 'login' ? (
-              <>还没有账号？<button onClick={() => { setMode('register'); setError(''); setName(''); }} className="text-emerald-600 hover:text-emerald-700">注册</button></>
+              <>还没有账号？<button onClick={() => { setMode('register'); setError(''); setName(''); }} className="text-[#4F8BFF]" style={{fontWeight:500}}>注册</button></>
             ) : (
-              <>已有账号？<button onClick={() => { setMode('login'); setError(''); }} className="text-emerald-600 hover:text-emerald-700">登录</button></>
+              <>已有账号？<button onClick={() => { setMode('login'); setError(''); }} className="text-[#4F8BFF]" style={{fontWeight:500}}>登录</button></>
             )}
           </p>
 
           <div className="text-center space-y-2">
             {mode === 'login' && (
-              <a href="/forgot-password" className="block text-xs text-gray-400 hover:text-emerald-600 transition-colors">
+              <a href="/forgot-password" className="block text-xs text-gray-400 transition-colors" style={{color:'rgba(0,0,0,0.35)'}}>
                 忘记密码？
               </a>
             )}

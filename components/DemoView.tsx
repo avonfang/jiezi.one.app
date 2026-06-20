@@ -41,7 +41,7 @@ export default function DemoView({ html, onBack }: DemoViewProps) {
         </div>
         <button
           onClick={handleDownload}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="rounded-xl gradient-primary px-5 py-2 text-sm font-medium text-white active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
         >
           下载演示
         </button>

@@ -35,10 +35,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 to-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background:'var(--bg-gradient)'}}>
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
         <div className="px-6 pt-8 pb-4 text-center">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+          <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center mx-auto mb-3">
             <span className="text-lg">🌱</span>
           </div>
           <h2 className="text-lg font-bold text-gray-900">找回密码</h2>
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               placeholder="输入注册邮箱"
-              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
@@ -64,13 +64,13 @@ export default function ForgotPasswordPage() {
           <button
             onClick={handleSubmit}
             disabled={!email.trim() || loading}
-            className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl gradient-primary py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
           >
             {loading ? '发送中...' : '发送重置邮件'}
           </button>
 
           <div className="text-center space-y-2">
-            <a href="/app/settings" className="block text-xs text-gray-400 hover:text-emerald-600 transition-colors">
+            <a href="/app/settings" className="block text-xs text-gray-400 hover:text-[#4F8BFF] transition-colors">
               返回登录
             </a>
           </div>

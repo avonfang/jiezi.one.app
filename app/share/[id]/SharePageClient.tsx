@@ -1,6 +1,5 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { ShareData, ValidationReport } from '@/lib/types';
 
@@ -22,15 +21,13 @@ const VERDICT_ICONS: Record<string, string> = {
   '不建议做': '🔴',
 };
 
-export default function SharePageClient() {
-  const params = useParams();
-  const id = params?.id as string;
-  const [data, setData] = useState<ShareData | null>(null);
+export default function SharePageClient({ id, initialData }: { id: string; initialData: ShareData | null }) {
+  const [data, setData] = useState<ShareData | null>(initialData);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
-    if (!id) return;
+    if (data) return;
     fetch(`/api/share/${id}`)
       .then(r => r.json())
       .then(res => {
@@ -39,11 +36,11 @@ export default function SharePageClient() {
       })
       .catch(() => setError('网络异常'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, data]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{background:'var(--bg-gradient)'}}>
         <p className="text-gray-400">加载中...</p>
       </div>
     );
@@ -51,7 +48,7 @@ export default function SharePageClient() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{background:'var(--bg-gradient)'}}>
         <div className="text-center">
           <p className="text-gray-400 mb-2">😕</p>
           <p className="text-gray-500">{error || '内容不存在'}</p>
@@ -65,7 +62,7 @@ export default function SharePageClient() {
   const icon = VERDICT_ICONS[r.verdict] || '🟡';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{background:'var(--bg-gradient)'}}>
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -101,14 +98,14 @@ export default function SharePageClient() {
 
         {/* Search evidence */}
         {r.competitors && r.competitors.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4 mb-6">
+          <div className="rounded-xl p-4 mt-4 mb-6 liquid-glass glass-sm">
             <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
-              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="#4F8BFF" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               AI 搜索发现 {r.competitors.length} 个相关产品
             </div>
             <div className="flex flex-wrap gap-2">
               {r.competitors.map((c, i) => (
-                <div key={i} className="flex-1 min-w-[160px] bg-gray-50 rounded-lg p-3">
+                <div key={i} className="flex-1 min-w-[160px] rounded-lg p-3" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
                   <p className="text-sm font-medium text-gray-700">{c.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{c.positioning}</p>
                 </div>
@@ -125,7 +122,7 @@ export default function SharePageClient() {
               <ScoreBox label="开发可行性" score={r.feasibility_score} />
             </div>
             {r.scoring && (
-              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <div className="mt-3 rounded-lg p-3" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 text-center">评分依据</p>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   <ScoringItem label="市场规模" value={r.scoring.market_size} color="blue" />
@@ -166,7 +163,7 @@ export default function SharePageClient() {
           <Section title="竞品列表">
             <div className="space-y-3">
               {r.competitors.map((c, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-lg p-3">
+                <div key={i} className="rounded-lg p-3" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
                   <p className="font-medium text-gray-900">{c.name}</p>
                   <p className="text-sm text-gray-500 mt-0.5">{c.positioning}</p>
                 </div>
@@ -179,11 +176,11 @@ export default function SharePageClient() {
         {r.differentiation && <Section title="差异化空间"><p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{r.differentiation}</p></Section>}
         {r.target_users && <Section title="目标用户"><p className="text-gray-700">{r.target_users}</p></Section>}
         {r.pricing_suggestion && <Section title="建议定价"><p className="text-gray-700">{r.pricing_suggestion}</p></Section>}
-        {r.acquisition_channels && <Section title="获客渠道"><div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-800 leading-relaxed">{r.acquisition_channels}</div></Section>}
-        {r.cost_budget && <Section title="成本预算"><div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed">{r.cost_budget}</div></Section>}
-        {r.revenue_estimation && <Section title="收入预估"><div className="bg-green-50 rounded-lg p-4 text-sm text-green-800 leading-relaxed">{r.revenue_estimation}</div></Section>}
-        {r.tech_assessment && <Section title="技术实现评估"><div className="bg-indigo-50 rounded-lg p-4 text-sm text-indigo-800 leading-relaxed">{r.tech_assessment}</div></Section>}
-        {r.mvp_timeline && <Section title="MVP 落地时间线"><div className="bg-purple-50 rounded-lg p-4 text-sm text-purple-800 leading-relaxed">{r.mvp_timeline}</div></Section>}
+        {r.acquisition_channels && <Section title="获客渠道"><div className="rounded-lg p-4 text-sm leading-relaxed liquid-glass glass-sm" style={{color:'#1C1C1E'}}>{r.acquisition_channels}</div></Section>}
+        {r.cost_budget && <Section title="成本预算"><div className="rounded-lg p-4 text-sm leading-relaxed" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>{r.cost_budget}</div></Section>}
+        {r.revenue_estimation && <Section title="收入预估"><div className="rounded-lg p-4 text-sm leading-relaxed liquid-glass glass-sm">{r.revenue_estimation}</div></Section>}
+        {r.tech_assessment && <Section title="技术实现评估"><div className="rounded-lg p-4 text-sm leading-relaxed liquid-glass glass-sm">{r.tech_assessment}</div></Section>}
+        {r.mvp_timeline && <Section title="MVP 落地时间线"><div className="rounded-lg p-4 text-sm leading-relaxed liquid-glass glass-sm">{r.mvp_timeline}</div></Section>}
         {r.risk_warnings?.length > 0 && (
           <Section title="风险提示">
             <div className="space-y-2">
@@ -199,11 +196,11 @@ export default function SharePageClient() {
 
         {/* PRD link */}
         {data.prd && (
-          <div className="bg-white border border-blue-100 rounded-xl p-5 text-center">
+          <div className="rounded-xl p-5 text-center liquid-glass">
             <p className="text-sm text-gray-500 mb-3">该报告已生成产品需求文档（PRD）</p>
             <button
               onClick={() => window.location.href = `/share/${id}?view=prd`}
-              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              className="rounded-xl gradient-primary px-6 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98]" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
             >
               查看 PRD
             </button>
@@ -211,14 +208,14 @@ export default function SharePageClient() {
         )}
 
         {/* CTA */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <a href="/" className="text-sm text-blue-500 hover:text-blue-700">
+        <div className="text-center mt-8 pt-6" style={{borderTop:'1px solid rgba(255,255,255,0.3)'}}>
+          <a href="/" className="text-sm" style={{color:'#4F8BFF'}}>
             用芥子验证你的想法 →
           </a>
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-gray-300 mt-6 pt-4 border-t border-gray-100">
+        <div className="text-center text-xs mt-6 pt-4" style={{color:'rgba(0,0,0,0.25)', borderTop:'1px solid rgba(255,255,255,0.3)'}}>
           <p>芥子 · 「芥子纳须弥」—— 一粒芥子容纳整座须弥山</p>
           <p className="mt-1">由 AI 生成 · 所有分析仅供参考</p>
         </div>
@@ -238,7 +235,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg p-3 text-center">
+    <div className="rounded-lg p-3 text-center" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className="text-sm font-medium text-gray-800">{value}</p>
     </div>
@@ -246,16 +243,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function ScoreBox({ label, score }: { label: string; score: number }) {
-  const color = score >= 7 ? 'bg-green-500' : score >= 4.5 ? 'bg-yellow-500' : 'bg-red-500';
-  const bgColor = score >= 7 ? 'bg-green-50' : score >= 4.5 ? 'bg-yellow-50' : 'bg-red-50';
+  const barColor = score >= 7 ? '#34C759' : score >= 4.5 ? '#FF9F0A' : '#FF453A';
   return (
-    <div className={`${bgColor} rounded-lg p-4`}>
+    <div className="rounded-lg p-4" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600">{label}</span>
         <span className="text-2xl font-bold text-gray-800">{score}</span>
       </div>
       <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${score * 10}%` }} />
+        <div className="h-full rounded-full" style={{ width: `${score * 10}%`, background: barColor }} />
       </div>
     </div>
   );
@@ -281,8 +277,8 @@ function normalizedScore(...scores: number[]): number {
 function SummaryCard({ report, idea }: { report: ValidationReport; idea: string }) {
   const s = report.summary;
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-      <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+    <div className="rounded-xl overflow-hidden mb-6 liquid-glass">
+      <div className="h-1.5 bg-gradient-to-r from-[#4F8BFF] to-[#7C6CF0]" />
       <div className="p-6">
         <div className="flex items-center gap-1.5 mb-3">
           <span className="text-sm">🌱</span>

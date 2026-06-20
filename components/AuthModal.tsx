@@ -110,7 +110,7 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
           <button
             onClick={handleSubmit}
             disabled={!email.trim() || !password || loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl gradient-primary py-2.5 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
           >
             {loading ? '处理中...' : mode === 'login' ? '登录' : '注册'}
           </button>

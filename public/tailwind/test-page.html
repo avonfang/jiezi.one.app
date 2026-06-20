@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/tailwind/prebuilt.css">
+  <style>
+    /* Inline styles for fallback testing */
+    .test-box { border: 4px solid red !important; }
+    .self-check { position: fixed; top: 10px; left: 10px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <!-- Self-check badge (should be visible at top-left) -->
+  <div class="self-check bg-red-500 text-white px-4 py-2 rounded-lg shadow-2xl font-bold text-lg">
+    🔴 CSS LOADED
+  </div>
+
+  <!-- Test 1: Inline style (no Tailwind) -->
+  <div style="background:#222; color:white; padding:20px; text-align:center; font-size:24px; margin-top:60px;">
+    ✅ 测试 1: 内联样式 — 如果看到此文字，内联 CSS 正常
+  </div>
+
+  <!-- Test 2: Tailwind utility classes -->
+  <div class="bg-gradient-to-br from-blue-600 to-purple-700 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-6 shadow-2xl">
+        <h1 class="text-4xl font-bold text-white mb-4">芥子 AI 预览测试</h1>
+        <p class="text-xl text-white/80">如果看到渐变背景、毛玻璃卡片、白色文字 — Tailwind CSS 正常加载</p>
+      </div>
+
+      <!-- Test cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transition-shadow">
+          <div class="text-3xl mb-2">🎨</div>
+          <h3 class="text-lg font-semibold text-gray-800">Tailwind 样式</h3>
+          <p class="text-gray-500 text-sm mt-1">rounded-xl + shadow-lg + p-6</p>
+        </div>
+        <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transition-shadow">
+          <div class="text-3xl mb-2">📐</div>
+          <h3 class="text-lg font-semibold text-gray-800">响应式网格</h3>
+          <p class="text-gray-500 text-sm mt-1">grid-cols-1 md:grid-cols-3</p>
+        </div>
+        <div class="bg-white/20 backdrop-blur rounded-xl p-6 shadow-lg border border-white/30">
+          <div class="text-3xl mb-2">🪟</div>
+          <h3 class="text-lg font-semibold text-white">毛玻璃效果</h3>
+          <p class="text-white/70 text-sm mt-1">backdrop-blur + bg-white/20</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

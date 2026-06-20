@@ -443,7 +443,7 @@ export default function AppPage() {
   if (view === 'summary' && report) {
     return (
       <section className="flex-1">
-        <div className="max-w-2xl mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto px-4 py-16">
           <SummaryView
             report={report}
             idea={idea}
@@ -503,7 +503,7 @@ export default function AppPage() {
   return (
     <>
       <section className="flex-1">
-        <div className="max-w-2xl mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto px-4 py-16">
           {status === 'idle' && (
             <>
               <HistoryPanel items={history} onRestore={handleRestore} onDelete={handleDeleteHistory} />
@@ -516,7 +516,7 @@ export default function AppPage() {
                   <button
                     key={i}
                     onClick={() => setSampleIdea(s)}
-                    className="text-xs text-gray-500 bg-white hover:bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 transition-colors"
+                    className="text-xs text-gray-500 rounded-full px-3 py-1.5 transition-colors" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}
                   >
                     {s.length > 26 ? s.substring(0, 24) + '...' : s}
                   </button>
@@ -566,10 +566,10 @@ export default function AppPage() {
               <p className="text-gray-700 font-medium mb-1">生成被中断了</p>
               <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto leading-relaxed">{error}</p>
               <div className="flex items-center justify-center gap-3">
-                <button onClick={handleReset} className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                <button onClick={handleReset} className="rounded-xl px-6 py-2.5 text-sm font-medium text-gray-600 active:scale-[0.98] transition-all" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)'}}>
                   重新开始
                 </button>
-                <button onClick={() => window.location.reload()} className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                <button onClick={() => window.location.reload()} className="rounded-xl gradient-primary px-6 py-2.5 text-sm font-medium text-white active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}>
                   刷新页面
                 </button>
               </div>
@@ -583,7 +583,7 @@ export default function AppPage() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:shadow-xl transition-all z-40"
+          className="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 active:scale-[0.98] transition-all z-40" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.3)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}
           aria-label="回到顶部"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -594,15 +594,15 @@ export default function AppPage() {
 
       {/* Share toast */}
       {shareCopied && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-5 py-3 rounded-xl shadow-lg z-50 animate-bounce">
-          链接已复制，可以分享给朋友了 ✨
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-sm px-5 py-3 rounded-xl shadow-lg z-50 animate-bounce liquid-glass" style={{borderRadius:'12px'}}>
+          链接已复制，可以分享给朋友了
         </div>
       )}
 
       {/* Loading overlay for PRD / Preview generation */}
       {prdLoading && (
-        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(242,240,245,0.8)', backdropFilter:'blur(16px)'}}>
+          <div className="flex flex-col items-center liquid-glass" style={{padding:'32px 48px', borderRadius:'20px'}}>
             <LoadingState
               stage={prdStage}
               message={prdProgress}
@@ -622,8 +622,8 @@ export default function AppPage() {
         </div>
       )}
       {previewLoading && (
-        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex flex-col items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(242,240,245,0.8)', backdropFilter:'blur(16px)'}}>
+          <div className="flex flex-col items-center liquid-glass" style={{padding:'32px 48px', borderRadius:'20px'}}>
             <LoadingState
               stage={previewStage}
               message={previewProgress}

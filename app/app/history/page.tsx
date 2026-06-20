@@ -92,7 +92,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{background:'var(--bg-gradient)'}}>
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -121,7 +121,7 @@ export default function HistoryPage() {
 
         {/* Stats summary */}
         {items.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+          <div className="rounded-xl p-4 mb-4 liquid-glass glass-sm">
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
                 <p className="text-lg font-bold text-gray-900">{stats.total}</p>
@@ -184,7 +184,7 @@ export default function HistoryPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors group"
+                  className="rounded-xl overflow-hidden transition-all group liquid-glass glass-sm"
                 >
                   <button
                     onClick={() => handleRestore(item)}

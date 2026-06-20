@@ -1,10 +1,8 @@
 import { NextRequest } from 'next/server';
-import { readdir, readFile } from 'fs/promises';
-import path from 'path';
-import { dataDir } from '@/lib/data-dir';
+import { kvGet } from '@/lib/kv-store';
 import { checkAdminAuth } from '@/lib/admin-auth';
 
-const FEEDBACK_DIR = dataDir('feedback');
+const FEEDBACK_KEY = 'feedback:all';
 
 export async function GET(request: NextRequest) {
   if (!checkAdminAuth(request)) {
@@ -12,22 +10,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const files = await readdir(FEEDBACK_DIR).catch(() => []);
-    const feedbacks = await Promise.all(
-      files
-        .filter(f => f.endsWith('.json'))
-        .sort()
-        .reverse()
-        .map(async (f) => {
-          try {
-            const content = await readFile(path.join(FEEDBACK_DIR, f), 'utf-8');
-            return JSON.parse(content);
-          } catch {
-            return null;
-          }
-        }),
-    );
-    return Response.json({ feedbacks: feedbacks.filter(Boolean) });
+    const feedbacks = await kvGet<any[]>(FEEDBACK_KEY) || [];
+    return Response.json({ feedbacks });
   } catch {
     return Response.json({ feedbacks: [] });
   }

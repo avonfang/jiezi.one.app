@@ -68,9 +68,9 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
   };
 
   return (
-    <div className="border border-blue-200 rounded-xl bg-white overflow-hidden">
+    <div className="rounded-xl overflow-hidden liquid-glass">
       {/* Header */}
-      <div className="bg-blue-600 px-4 py-3 flex items-center gap-2">
+      <div className="gradient-primary px-4 py-3 flex items-center gap-2">
         <span className="text-lg">👨‍💼</span>
         <div>
           <p className="text-sm font-medium text-white">资深 PM 顾问</p>
@@ -97,7 +97,7 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
                   onClick={() => {
                     setInput(q);
                   }}
-                  className="block w-full text-left text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors"
+                  className="block w-full text-left text-sm text-blue-600 rounded-lg px-3 py-2 transition-colors" style={{background:'rgba(79,139,255,0.08)', backdropFilter:'blur(8px)', border:'1px solid rgba(79,139,255,0.1)'}}
                 >
                   {q}
                 </button>
@@ -111,7 +111,7 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
             <div
               className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-blue-600 text-white'
+                  ? 'gradient-primary text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
@@ -152,7 +152,7 @@ export default function PMConsultView({ idea, report }: PMConsultViewProps) {
         <button
           onClick={handleSend}
           disabled={!input.trim() || loading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="rounded-xl gradient-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all" style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
         >
           发送
         </button>
