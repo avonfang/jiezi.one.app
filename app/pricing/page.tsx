@@ -250,50 +250,72 @@ export default function PricingPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`rounded-xl p-5 transition-all relative liquid-glass ${
-                selectedPlan === plan.id
-                  ? 'ring-2 ring-[#4F8BFF]'
-                  : ''
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 gradient-primary text-white text-[10px] font-semibold px-3 py-0.5 rounded-full shadow-sm">
-                  推荐
-                </div>
-              )}
-              <div className="text-center pt-1">
-                <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{plan.price}</p>
-                <p className="text-sm text-gray-400 mt-0.5">{plan.credits}</p>
-                <p className="text-xs font-medium mt-0.5" style={{color:'#4F8BFF'}}>{plan.unit_price}</p>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-50">
-                <ul className="space-y-2">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{color:'#4F8BFF'}}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => handleStartPayment(plan.id)}
-                className={`w-full mt-4 rounded-xl py-2.5 text-sm font-medium transition-all active:scale-[0.98] ${
-                  plan.popular
-                    ? 'gradient-primary text-white shadow-sm'
-                    : 'border text-gray-600'
-                }`} style={plan.popular ? {boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'} : {borderColor:'rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.3)'}}
+          {PLANS.map((plan) => {
+            const isSelected = selectedPlan === plan.id;
+            return (
+              <div
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`rounded-xl p-5 transition-all cursor-pointer relative ${
+                  isSelected
+                    ? 'ring-2 ring-[#4F8BFF] shadow-lg'
+                    : 'shadow-sm hover:shadow-md'
+                }`}
+                style={isSelected ? {
+                  background: 'linear-gradient(135deg, rgba(79,139,255,0.06), rgba(124,108,240,0.04))',
+                  border: '1px solid rgba(79,139,255,0.3)',
+                  backdropFilter: 'blur(28px) saturate(160%) contrast(1.02)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(79,139,255,0.15), 0 8px 40px rgba(79,139,255,0.10), 0 2px 8px rgba(0,0,0,0.03)',
+                } : {
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--glass-bg)',
+                  backdropFilter: 'blur(28px) saturate(160%) contrast(1.02)',
+                  boxShadow: 'var(--glass-shadow)',
+                }}
               >
-                立即购买
-              </button>
-            </div>
-          ))}
+                {plan.popular && (
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 gradient-primary text-white text-[10px] font-semibold px-3 py-0.5 rounded-full shadow-sm z-10">
+                    推荐
+                  </div>
+                )}
+                {isSelected && (
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full gradient-primary flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                <div className="text-center pt-1">
+                  <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{plan.price}</p>
+                  <p className="text-sm text-gray-400 mt-0.5">{plan.credits}</p>
+                  <p className="text-xs font-medium mt-0.5" style={{color:'#4F8BFF'}}>{plan.unit_price}</p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <ul className="space-y-2">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{color:'#4F8BFF'}}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStartPayment(plan.id); }}
+                  className={`w-full mt-4 rounded-xl py-2.5 text-sm font-medium transition-all active:scale-[0.98] ${
+                    plan.popular
+                      ? 'gradient-primary text-white shadow-sm'
+                      : 'border text-gray-600'
+                  }`} style={plan.popular ? {boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'} : {borderColor:'rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.3)'}}
+                >
+                  立即购买
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         {/* 积分加油包 */}
