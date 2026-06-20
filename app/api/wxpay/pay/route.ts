@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createOrder } from '@/lib/orders';
-import { createXorpayPayment } from '@/lib/xorpay';
+import { createOrder, confirmOrder } from '@/lib/orders';
+import { createXorpayPayment, getXorpayConfig } from '@/lib/xorpay';
 import { getWechatOpenid } from '@/lib/auth-server';
 
 const PLANS: Record<string, { name: string; credits: number; price: string }> = {
@@ -19,6 +19,16 @@ export async function POST(request: NextRequest) {
     const cfg = PLANS[plan];
     if (!cfg) return Response.json({ error: '无效的套餐' }, { status: 400 });
     if (!userId) return Response.json({ error: '缺少用户标识' }, { status: 400 });
+
+    // Dev mode: auto-confirm order without real payment
+    let xorpayConfigured = false;
+    try { getXorpayConfig(); xorpayConfigured = true; } catch {}
+    if (!xorpayConfigured) {
+      const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'dev');
+      await confirmOrder(order.id);
+      console.log(`Dev mode: auto-confirmed order ${order.id} for user ${userId}`);
+      return Response.json({ success: true, orderId: order.id });
+    }
 
     const openid = await getWechatOpenid(userId);
     if (!openid) {

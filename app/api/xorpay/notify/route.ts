@@ -4,15 +4,19 @@ import { confirmOrder } from '@/lib/orders';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const aoid = (formData.get('aoid') as string) || '';
-    const orderId = (formData.get('order_id') as string) || '';
-    const payPrice = (formData.get('pay_price') as string) || '';
-    const payTime = (formData.get('pay_time') as string) || '';
-    const sign = (formData.get('sign') as string) || '';
+    // XORPay sends application/x-www-form-urlencoded, not multipart
+    const text = await request.text();
+    const raw = new URLSearchParams(text);
+    const aoid = raw.get('aoid') || '';
+    const orderId = raw.get('order_id') || '';
+    const payPrice = raw.get('pay_price') || '';
+    const payTime = raw.get('pay_time') || '';
+    const sign = raw.get('sign') || '';
+
+    console.log(`XORPay notify received — order_id=${orderId}, aoid=${aoid}, pay_price=${payPrice}`);
 
     if (!aoid || !orderId || !payPrice || !sign) {
-      console.error('XORPay notify: missing parameters');
+      console.error('XORPay notify: missing parameters, raw=' + text.slice(0, 300));
       return new Response('fail', { status: 400 });
     }
 
