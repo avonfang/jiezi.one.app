@@ -104,6 +104,16 @@ export default function PricingPage() {
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, []);
 
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlan(planId);
+    // Reset payment state when switching to a different plan
+    setPaymentState('idle');
+    setQrCodeUrl(null);
+    setQrDataUrl(null);
+    setOrderId(null);
+    setError('');
+  };
+
   const handleStartPayment = async (planId?: string) => {
     const pid = planId || selectedPlan;
     if (!pid) return;
@@ -255,7 +265,7 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
+                onClick={() => handleSelectPlan(plan.id)}
                 className={`rounded-xl p-5 transition-all cursor-pointer relative ${
                   isSelected
                     ? 'ring-2 ring-[#4F8BFF] shadow-lg'
@@ -327,23 +337,52 @@ export default function PricingPage() {
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{color:'#4F8BFF', background:'rgba(79,139,255,0.08)'}}>灵活补充</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleStartPayment('topup_small')}
-                className="rounded-xl p-4 text-center transition-all" style={{border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.25)', backdropFilter:'blur(8px)'}}
-              >
-                <p className="text-2xl font-bold text-gray-900">¥2.90</p>
-                <p className="text-sm font-medium mt-1" style={{color:'#4F8BFF'}}>3 积分</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">¥0.97/积分</p>
-              </button>
-              <button
-                onClick={() => handleStartPayment('topup_large')}
-                className="rounded-xl p-4 text-center transition-all" style={{border:'1px solid rgba(79,139,255,0.2)', background:'rgba(79,139,255,0.06)', backdropFilter:'blur(8px)'}}
-              >
-                <p className="text-2xl font-bold text-gray-900">¥3.90</p>
-                <p className="text-sm font-medium mt-1" style={{color:'#4F8BFF'}}>5 积分</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">¥0.78/积分</p>
-              </button>
+              {[
+                { id: 'topup_small', price: '¥2.90', credits: '3 积分', unit: '¥0.97/积分', desc: '小份补充' },
+                { id: 'topup_large', price: '¥3.90', credits: '5 积分', unit: '¥0.78/积分', desc: '大份更划算' },
+              ].map(item => {
+                const isSelected = selectedPlan === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectPlan(item.id)}
+                    className={`rounded-xl p-4 text-center transition-all cursor-pointer relative ${
+                      isSelected ? 'ring-2 ring-[#4F8BFF]' : ''
+                    }`}
+                    style={isSelected ? {
+                      border: '1px solid rgba(79,139,255,0.3)',
+                      background: 'linear-gradient(135deg, rgba(79,139,255,0.06), rgba(124,108,240,0.04))',
+                      backdropFilter: 'blur(28px) saturate(160%) contrast(1.02)',
+                      boxShadow: 'inset 0 1.5px 0 rgba(79,139,255,0.15), 0 4px 20px rgba(79,139,255,0.10)',
+                    } : {
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      background: 'rgba(255,255,255,0.25)',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full gradient-primary flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                    <p className="text-2xl font-bold text-gray-900">{item.price}</p>
+                    <p className="text-sm font-medium mt-1" style={{color:'#4F8BFF'}}>{item.credits}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{item.unit}</p>
+                  </div>
+                );
+              })}
             </div>
+            {selectedPlan?.startsWith('topup') && (
+              <button
+                onClick={() => handleStartPayment(selectedPlan!)}
+                className="w-full mt-4 rounded-xl py-2.5 text-sm font-medium text-white gradient-primary transition-all active:scale-[0.98]"
+                style={{boxShadow:'0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}
+              >
+                确认支付
+              </button>
+            )}
           </div>
         </div>
 
