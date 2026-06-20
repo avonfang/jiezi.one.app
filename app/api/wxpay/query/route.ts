@@ -3,7 +3,7 @@ import { kvGet } from "@/lib/kv-store";
 
 export async function GET(request: NextRequest) {
   const orderId = request.nextUrl.searchParams.get("orderId");
-  if (!orderId || !/^[0-9a-zA-Z_-]{12,20}$/.test(orderId)) {
+  if (!orderId || !/^[0-9a-zA-Z_-]{12,40}$/.test(orderId)) {
     return Response.json({ error: "参数错误" }, { status: 400 });
   }
 
