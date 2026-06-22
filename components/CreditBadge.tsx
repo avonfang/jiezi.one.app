@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getClientId, getAuthHeaders } from '@/lib/client-id';
+import { getClientId, getAuthHeaders, getUsername } from '@/lib/client-id';
 
 export default function CreditBadge() {
   const [balance, setBalance] = useState<number | null>(null);
+  const [loggedIn, setLoggedIn] = useState(() => !!getUsername());
 
   const fetchBalance = () => {
     const userId = getClientId();
@@ -16,13 +17,22 @@ export default function CreditBadge() {
   };
 
   useEffect(() => {
+    setLoggedIn(!!getUsername());
     fetchBalance();
   }, []);
 
-  // Listen for credit changes
+  // Listen for both credit changes and login events
   useEffect(() => {
-    window.addEventListener('credits-changed', fetchBalance);
-    return () => window.removeEventListener('credits-changed', fetchBalance);
+    const refresh = () => {
+      setLoggedIn(!!getUsername());
+      fetchBalance();
+    };
+    window.addEventListener('credits-changed', refresh);
+    window.addEventListener('login-changed', refresh);
+    return () => {
+      window.removeEventListener('credits-changed', refresh);
+      window.removeEventListener('login-changed', refresh);
+    };
   }, []);
 
   // Refresh after payment return
@@ -31,6 +41,18 @@ export default function CreditBadge() {
       fetchBalance();
     }
   }, []);
+
+  // For anonymous users, show a registration prompt instead of "0 credits"
+  if (!loggedIn) {
+    return (
+      <a
+        href="/pricing"
+        className="text-xs rounded-full px-3 py-1.5 font-medium transition-all" style={{color:'#4F8BFF', background:'rgba(79,139,255,0.08)', border:'1px solid rgba(79,139,255,0.15)', backdropFilter:'blur(8px)'}}
+      >
+        注册送 30 积分
+      </a>
+    );
+  }
 
   if (balance === null) return null;
 

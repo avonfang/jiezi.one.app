@@ -457,6 +457,8 @@ export default function Home() {
           onAuth={() => {
             setShowAuth(false);
             setUserName(getUsername());
+            window.dispatchEvent(new CustomEvent('login-changed'));
+            window.dispatchEvent(new CustomEvent('credits-changed'));
           }}
           anonymousId={getClientId()}
         />
