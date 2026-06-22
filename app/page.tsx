@@ -440,8 +440,8 @@ export default function Home() {
             {userName ? (
               <span className="text-xs text-gray-400 hidden sm:inline">{userName}</span>
             ) : (
-              <button onClick={() => setShowAuth(true)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                登录
+              <button onClick={() => setShowAuth(true)} className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:'rgba(79,139,255,0.08)', color:'#4F8BFF', border:'1px solid rgba(79,139,255,0.15)'}}>
+                登录 / 注册
               </button>
             )}
             <a href="/app/history" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">历史</a>
@@ -508,6 +508,12 @@ export default function Home() {
                   <p className="text-gray-500 text-sm">
                     输入一个产品想法，看看 AI 会给你什么建议
                   </p>
+                  {!userName && (
+                    <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full" style={{background:'rgba(79,139,255,0.06)', border:'1px solid rgba(79,139,255,0.1)'}}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#4F8BFF]" />
+                      <span className="text-xs" style={{color:'#4F8BFF'}}>需要登录才能使用 · 首次注册送 <strong>30 积分</strong></span>
+                    </div>
+                  )}
                 </div>
                 <div className="liquid-glass" style={{borderRadius:'16px', padding:'24px'}}>
                   <div className="flex flex-wrap justify-center gap-2 mb-5">

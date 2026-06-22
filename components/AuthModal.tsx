@@ -67,8 +67,13 @@ export default function AuthModal({ onClose, onAuth, anonymousId }: AuthModalPro
             {mode === 'login' ? '登录芥子' : '注册芥子'}
           </h2>
           <p className="text-sm text-gray-400 mt-1">
-            {mode === 'login' ? '登录后可在不同设备使用' : '注册后匿名次数会自动合并'}
+            {mode === 'login' ? '登录后可在不同设备使用' : '注册即送 30 积分 · 匿名次数自动合并'}
           </p>
+          {mode === 'register' && (
+            <div className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full" style={{background:'rgba(79,139,255,0.06)', border:'1px solid rgba(79,139,255,0.1)'}}>
+              <span className="text-xs font-medium" style={{color:'#4F8BFF'}}>🎁 首次注册送 30 积分</span>
+            </div>
+          )}
         </div>
 
         <div className="px-6 py-4 space-y-4">
