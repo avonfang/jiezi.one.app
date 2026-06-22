@@ -444,8 +444,10 @@ export default function Home() {
                 登录 / 注册
               </button>
             )}
-            <a href="/app/history" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">历史</a>
             <CreditBadge />
+            <a href="/app/history" className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:'rgba(79,139,255,0.08)', color:'#4F8BFF', border:'1px solid rgba(79,139,255,0.15)'}}>
+              我的
+            </a>
           </div>
         </div>
       </header>
