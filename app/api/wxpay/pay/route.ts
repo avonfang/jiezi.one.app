@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
     return Response.json({
       success: true,
       orderId: order.id,
-      qrCode: nativeResult.info?.qr || null,
+      // XORPay native returns a payment URL, not a QR image — convert to QR
+      qrCode: nativeResult.info?.qr
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(nativeResult.info.qr)}`
+        : null,
+      rawUrl: nativeResult.info?.qr || null,
       expireIn: nativeResult.expire_in || 7200,
     });
   } catch (error) {
