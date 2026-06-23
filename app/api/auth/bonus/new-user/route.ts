@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ success: true, balance, alreadyClaimed: true });
   }
 
-  // Grant 20 credits as new-user bonus
-  const balance = await addCredits(userId, 20);
+  // Grant 50 credits as new-user bonus
+  const balance = await addCredits(userId, 50);
   await kvSet(bonusKey, true);
 
   return Response.json({ success: true, balance, alreadyClaimed: false });
