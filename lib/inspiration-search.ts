@@ -11,7 +11,7 @@ export async function searchHN(): Promise<RawSource[]> {
     const topRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
     if (!topRes.ok) return [];
     const ids: number[] = await topRes.json();
-    const batch = ids.slice(0, 30);
+    const batch = ids.slice(0, 10);
 
     const items = await Promise.allSettled(
       batch.map(id =>

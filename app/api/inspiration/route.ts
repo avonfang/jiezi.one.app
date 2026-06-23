@@ -52,8 +52,6 @@ function buildPrompt(category: string, braveResults: string[], hnResults: string
 ${allSections}`;
 }
 
-// ── Route ─────────────────────────────────────────────────────────────
-
 export async function GET(request: NextRequest) {
   const category = request.nextUrl.searchParams.get('category') as InspirationCategory | null;
   if (!category || !INSPIRATION_CATEGORIES.some(c => c.id === category)) {
@@ -83,7 +81,7 @@ export async function GET(request: NextRequest) {
   // ── Concurrent search ─────────────────────────────────────────────
   const [braveResults, hnResults, githubResults] = await Promise.all([
     // Brave Search: run 3-4 queries concurrently, deduplicate by URL
-    Promise.allSettled(catConfig.queries.map(q => search(q, 5).catch(() => []))).then(results =>
+    Promise.allSettled(catConfig.queries.map(q => search(q, 3).catch(() => []))).then(results =>
       results
         .flatMap(r => (r.status === 'fulfilled' ? r.value : []))
         .filter((item, i, arr) => arr.findIndex(x => x.url === item.url) === i)
@@ -95,7 +93,7 @@ export async function GET(request: NextRequest) {
   const formatItem = (item: { title?: string; name?: string; snippet: string; url: string }) =>
     `- ${item.title || item.name || ''}\n  ${item.snippet}\n  ${item.url}`;
 
-  // ── DeepSeek aggregation ──────────────────────────────────────────
+  // ── DeepSeek aggregation (with 15s timeout) ───────────────────────
   const prompt = buildPrompt(
     catConfig.label,
     braveResults.map(formatItem),
@@ -103,12 +101,19 @@ export async function GET(request: NextRequest) {
     githubResults.map(formatItem),
   );
 
+  const deepseekPromise = chatCompletion([
+    { role: 'system', content: '只返回 JSON。不要 markdown。不要解释。' },
+    { role: 'user', content: prompt },
+  ], { temperature: 0.7, max_tokens: 2048 });
+
+  const timeoutPromise = new Promise<null>((_, reject) =>
+    setTimeout(() => reject(new Error('DeepSeek timeout')), 15000)
+  );
+
   let response: InspirationResponse;
   try {
-    const raw = await chatCompletion([
-      { role: 'system', content: '你是一个产品灵感分析师。只返回 JSON，不要 markdown 包裹。' },
-      { role: 'user', content: prompt },
-    ], { temperature: 0.7, max_tokens: 4096 });
+    const raw = await Promise.race([deepseekPromise, timeoutPromise]);
+    if (!raw) throw new Error('empty response');
 
     const parsed = JSON.parse(raw.replace(/```json\s*/gi, '').replace(/```\s*$/g, '').trim());
     response = {
