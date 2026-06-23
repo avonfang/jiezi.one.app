@@ -13,7 +13,7 @@ interface CreditRecord {
 export async function initCredits(userId: string): Promise<void> {
   const existing = await kvGet<CreditRecord>(creditKey(userId));
   if (existing) return;
-  await kvSet(creditKey(userId), { balance: 20, total_purchased: 0, created_at: Date.now() });
+  await kvSet(creditKey(userId), { balance: 50, total_purchased: 0, created_at: Date.now() });
 }
 
 export async function getBalance(userId: string): Promise<number> {
