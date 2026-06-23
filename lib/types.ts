@@ -120,3 +120,32 @@ export interface ShareData {
   preview?: PreviewPage;
   created_at: number;
 }
+
+// ── Inspiration Marketplace ────────────────────────────────────────────
+
+export interface InspirationItem {
+  title: string;
+  summary: string;
+  why_hot: string;
+  product_opportunity: string;
+  tags: string[];
+  source_url: string;
+  source_label: string;
+}
+
+export interface InspirationResponse {
+  summary: string;
+  items: InspirationItem[];
+  sources: { label: string; url: string }[];
+  cached?: boolean;
+}
+
+export type InspirationCategory = 'ai-tools' | 'global' | 'saas' | 'consumer' | 'edtech';
+
+export const INSPIRATION_CATEGORIES: { id: InspirationCategory; label: string; queries: string[] }[] = [
+  { id: 'ai-tools', label: 'AI 工具', queries: ['best new AI tools 2026', 'AI startup funding news', 'trending AI products launched'] },
+  { id: 'global', label: '出海', queries: ['Chinese SaaS global market 2026', 'cross-border ecommerce trends', 'Southeast Asia digital economy startup'] },
+  { id: 'saas', label: 'SaaS', queries: ['best SaaS products 2026', 'B2B software industry trends', 'SaaS growth strategies'] },
+  { id: 'consumer', label: '消费', queries: ['trending consumer apps 2026', 'viral social media products', 'new lifestyle brands products'] },
+  { id: 'edtech', label: '教育', queries: ['edtech trends 2026', 'AI education tools startup', 'online learning platform innovation'] },
+];

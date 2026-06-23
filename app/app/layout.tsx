@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/app', label: '新建验证', icon: '✏️' },
   { href: '/app/history', label: '历史记录', icon: '📋' },
   { href: '/app/xumi', label: '须弥', icon: '🔮' },
+  { href: '/app/inspiration', label: '灵感市集', icon: '💡' },
   { href: '/app/contact', label: '联系我们', icon: '💬' },
   { href: '/app/settings', label: '我的', icon: '👤' },
 ];
