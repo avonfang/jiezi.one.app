@@ -3,9 +3,18 @@ import { Redis } from '@upstash/redis';
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
 
-const kv = (UPSTASH_URL && UPSTASH_TOKEN)
-  ? new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN })
-  : null;
+// GitHub Actions 构建时用 `vercel pull` 拉取环境变量，Vercel 的 Sensitive
+// 变量只会返回 "[SENSITIVE]" 占位符，这里做防御性初始化：URL 非法时降级为
+// null（构建不崩溃）；生产运行时由 Vercel 注入真实值，仍可正常连接 Upstash。
+const kv: Redis | null = (() => {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+  if (!/^https:\/\//i.test(UPSTASH_URL)) return null;
+  try {
+    return new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN });
+  } catch {
+    return null;
+  }
+})();
 
 const mem = new Map<string, string>();
 
