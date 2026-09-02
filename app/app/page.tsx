@@ -11,6 +11,7 @@ import SummaryView from '@/components/SummaryView';
 import HistoryPanel from '@/components/HistoryPanel';
 import { getAuthHeaders } from '@/lib/client-id';
 import type { ValidationReport, PRD, PreviewPage, AppStatus, HistoryItem } from '@/lib/types';
+import { pickRandomHotIdeas } from '@/lib/hot-ideas';
 
 const SAMPLE_IDEAS = [
   '我想做一个 AI 记账工具，自动分析微信和支付宝账单',
@@ -43,6 +44,14 @@ export default function AppPage() {
   const [prdProgress, setPrdProgress] = useState('');
   const [previewProgress, setPreviewProgress] = useState('');
   const [stalled, setStalled] = useState(false);
+  const [showIdeaPanel, setShowIdeaPanel] = useState(false);
+  const [hotIdeas, setHotIdeas] = useState<{ icon: string; idea: string; tag: string }[]>([]);
+
+  // Lock body scroll while the idea panel is open
+  useEffect(() => {
+    document.body.style.overflow = showIdeaPanel ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showIdeaPanel]);
 
   useEffect(() => {
     // Restore report from homepage
@@ -400,6 +409,17 @@ export default function AppPage() {
     setShowPMConsult(false);
   };
 
+  const openIdeaPanel = () => {
+    setHotIdeas(pickRandomHotIdeas(12));
+    setShowIdeaPanel(true);
+  };
+  const closeIdeaPanel = () => setShowIdeaPanel(false);
+  const shuffleHotIdeas = () => setHotIdeas(pickRandomHotIdeas(12));
+  const pickHotIdea = (ideaText: string) => {
+    setSampleIdea(ideaText);
+    setShowIdeaPanel(false);
+  };
+
   const handleBackToReport = () => {
     setView('report');
   };
@@ -523,6 +543,15 @@ export default function AppPage() {
                 ))}
               </div>
               <IdeaInput onSubmit={handleSubmit} disabled={false} sampleIdea={sampleIdea} />
+              <div className="mt-3 flex items-center justify-center">
+                <button
+                  onClick={openIdeaPanel}
+                  className="inline-flex items-center gap-2 text-sm font-medium rounded-full px-5 py-2.5 transition-all active:scale-[0.98] hover:opacity-80"
+                  style={{ color: '#4F8BFF', background: 'rgba(79,139,255,0.08)', border: '1px solid rgba(79,139,255,0.18)' }}
+                >
+                  <span>🎲</span> 随机生成创业点子 · 看看最近很火的点子
+                </button>
+              </div>
               <div className="mt-6 text-xs text-gray-400 leading-relaxed text-center">
                 AI 将为你生成：市场验证报告 · SWOT 分析 · 产品需求文档（PRD） · 产品预览页
               </div>
@@ -578,6 +607,42 @@ export default function AppPage() {
           )}
         </div>
       </section>
+
+      {/* 随机创业点子弹窗 */}
+      {showIdeaPanel && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-end sm:items-center justify-center animate-fadeIn" onClick={closeIdeaPanel}>
+          <div className="w-full sm:max-w-lg bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between px-6 pt-6 pb-3 shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">🔥 最近很火的点子</h3>
+                <p className="text-xs text-gray-400 mt-1">随机为你推荐 · 点一个即可填入并开始验证</p>
+              </div>
+              <button onClick={closeIdeaPanel} aria-label="关闭" className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="px-4 overflow-y-auto min-h-0">
+              <div className="divide-y divide-gray-100 rounded-xl" style={{ border: '1px solid rgba(235,238,248,0.9)', background: 'rgba(247,249,255,0.6)' }}>
+                {hotIdeas.map((item, idx) => (
+                  <button key={idx} onClick={() => pickHotIdea(item.idea)} className="w-full text-left flex items-center gap-3 px-3 py-3 transition-colors hover:bg-[rgba(79,139,255,0.06)] active:bg-[rgba(79,139,255,0.08)]">
+                    <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-lg" style={{ background: 'rgba(79,139,255,0.08)' }}>{item.icon}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm text-gray-800 leading-snug">{item.idea}</span>
+                      <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ color: '#4F8BFF', background: 'rgba(79,139,255,0.08)' }}>{item.tag}</span>
+                    </span>
+                    <span className="text-gray-300 shrink-0">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="px-6 py-4 shrink-0">
+              <button onClick={shuffleHotIdeas} className="w-full rounded-xl gradient-primary py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98]" style={{ boxShadow: '0 2px 16px rgba(79,139,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
+                🎲 换一批
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scroll to top */}
       {showScrollTop && (
