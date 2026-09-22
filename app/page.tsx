@@ -444,6 +444,7 @@ export default function Home() {
                 登录 / 注册
               </button>
             )}
+            <a href="/zhixian" className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:"rgba(124,108,240,0.08)", color:"#534AB7", border:"1px solid rgba(124,108,240,0.15)"}}>🧭 仙人指路</a>
             <CreditBadge />
             <a href="/app/history" className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:'rgba(79,139,255,0.08)', color:'#4F8BFF', border:'1px solid rgba(79,139,255,0.15)'}}>
               我的
