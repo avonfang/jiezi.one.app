@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { chatCompletion } from '@/lib/deepseek';
-import { useCredit, initCredits } from '@/lib/credits';
+import { spendCredit, initCredits } from '@/lib/credits';
 import type { ChatMessage, ValidationReport } from '@/lib/types';
 import { getUserIdFromRequest } from '@/lib/get-user';
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Credit check
     await initCredits(clientId);
-    const deducted = await useCredit(clientId);
+    const deducted = await spendCredit(clientId);
     if (!deducted) {
       return Response.json(
         { error: '积分不足，请充值', code: 'INSUFFICIENT_CREDITS' },

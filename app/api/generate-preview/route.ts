@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { chatCompletionStream } from '@/lib/deepseek';
-import { initCredits, useCredits } from '@/lib/credits';
+import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
 
 const CONTEXT = `你是一个资深前端设计师。根据 PRD 为一个新产品生成精美的 Landing Page HTML，只输出 HTML 代码，用 <!-- HTML --> 和 <!-- END --> 包裹，不要有任何其他文字。
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: '缺少用户标识' }, { status: 400 });
     }
     await initCredits(clientId);
-    const deducted = await useCredits(clientId, 3);
+    const deducted = await spendCredits(clientId, 3);
     if (!deducted) {
       return Response.json(
         { error: '积分不足，请充值', code: 'INSUFFICIENT_CREDITS' },

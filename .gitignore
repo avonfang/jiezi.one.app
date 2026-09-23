@@ -59,3 +59,7 @@ next-env.d.ts
 tmp-tw/
 design-preview.html
 skills-lock.json
+
+# zhixian local test library (celebrity face images - never commit)
+.zhixian-library/
+

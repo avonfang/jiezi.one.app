@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { initCredits, useCredits } from '@/lib/credits';
+import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     await initCredits(clientId);
-    const deducted = await useCredits(clientId, 2);
+    const deducted = await spendCredits(clientId, 2);
     if (!deducted) {
       return Response.json(
         { error: '积分不足，请充值', code: 'INSUFFICIENT_CREDITS' },

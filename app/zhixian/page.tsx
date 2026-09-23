@@ -21,6 +21,7 @@ const STARS: Star[] = [
 ];
 
 const TAB_LABELS = ['造型', '名场面', '脚本', '发布策略'];
+const FACE_MATCH_ENABLED = process.env.NEXT_PUBLIC_ZHIXIAN_FACE_MATCH_ENABLED === 'true';
 
 function Compass({ spinning, size = 180 }: { spinning?: boolean; size?: number }) {
   return (
@@ -61,6 +62,14 @@ function Ring({ pct }: { pct: number }) {
   );
 }
 
+function Avatar({ star, size = 48 }: { star: Star; size?: number }) {
+  return (
+    <div className="rounded-full flex items-center justify-center text-white font-bold shrink-0" style={{ width: size, height: size, background: 'linear-gradient(135deg,#534AB7,#BA7517)', fontSize: Math.round(size * 0.42) }}>
+      {star.name[0]}
+    </div>
+  );
+}
+
 export default function ZhixianPage() {
   const [stage, setStage] = useState<'home' | 'loading' | 'result' | 'card'>('home');
   const [consentOpen, setConsentOpen] = useState(false);
@@ -71,7 +80,8 @@ export default function ZhixianPage() {
   const [unlocked, setUnlocked] = useState<boolean[]>([true, false, false, false]);
   const [currentTab, setCurrentTab] = useState(0);
   const [toast, setToast] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoTouched, setPhotoTouched] = useState(false);
+  const [isMockResult, setIsMockResult] = useState(true);
   const [steps, setSteps] = useState<number>(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -96,30 +106,69 @@ export default function ZhixianPage() {
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
+    e.target.value = '';
+    if (!f.type.startsWith('image/')) {
+      showToast('请选择图片文件');
+      return;
+    }
+    if (f.size > 15 * 1024 * 1024) {
+      showToast('图片不能超过 15MB');
+      return;
+    }
+    setPhotoTouched(true);
+
+    // 默认安全模式：照片只用于触发本次演示，不读取内容、不上传。
+    if (!FACE_MATCH_ENABLED) {
+      runAnalysis(null);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
-      setPhoto(reader.result as string);
-      runAnalysis();
+      runAnalysis(reader.result as string);
     };
+    reader.onerror = () => showToast('读取照片失败');
     reader.readAsDataURL(f);
-    e.target.value = '';
   }
 
-  function runAnalysis() {
+  async function runAnalysis(image: string | null) {
     setStage('loading');
     setSteps(0);
     const times = [500, 1300, 2300, 3300];
     times.forEach((t, i) => {
       window.setTimeout(() => setSteps(i + 1), t);
     });
-    window.setTimeout(() => {
-      const list = pickTop3();
-      setTop3(list);
-      setTop1Index(0);
-      setUnlocked([true, false, false, false]);
-      setCurrentTab(0);
-      setStage('result');
-    }, 4000);
+
+    const [apiResult] = await Promise.all([
+      matchApi(image),
+      new Promise<void>((resolve) => window.setTimeout(resolve, 3500)),
+    ]);
+
+    const list = apiResult?.top3?.length ? apiResult.top3 : pickTop3();
+    setIsMockResult(!apiResult || apiResult.mock);
+    setTop3(list);
+    setTop1Index(0);
+    setUnlocked([true, false, false, false]);
+    setCurrentTab(0);
+    setStage('result');
+  }
+
+  async function matchApi(image: string | null): Promise<{ top3: Star[]; mock: boolean } | null> {
+    if (!image || !FACE_MATCH_ENABLED) return null;
+    try {
+      const res = await fetch('/api/zhixian/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, consentFaceSearch: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && Array.isArray(data.top3)) {
+        return { top3: data.top3 as Star[], mock: !!data.mock };
+      }
+    } catch (error) {
+      console.error('match api error', error);
+    }
+    return null;
   }
 
   function copyName() {
@@ -170,7 +219,7 @@ export default function ZhixianPage() {
               测出你的<br /><span style={{ color: '#534AB7' }}>明星分身</span>
             </h1>
             <p className="text-sm md:text-base mt-4 leading-relaxed mx-auto max-w-md" style={{ color: '#5D5A75' }}>
-              上传一张自拍，AI 给出「风格相似度」报告，再给你一份能直接开拍的方向指南。
+              选择一张自拍，得到「风格相似度」报告，再领取一份能直接开拍的方向指南。
             </p>
             <div className="my-8 flex justify-center">
               <div className="animate-float"><Compass /></div>
@@ -180,15 +229,16 @@ export default function ZhixianPage() {
               className="w-full max-w-sm rounded-2xl text-white font-bold text-base py-4 tracking-wide transition-transform active:translate-y-px"
               style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)', boxShadow: '0 10px 24px rgba(83,74,183,.35)' }}
             >
-              上传自拍，测测你像谁
+              选择自拍，测测你像谁
             </button>
-            <p className="text-xs mt-4" style={{ color: '#8A8798' }}>仅用于风格相似度分析 · 即测即弃 · 非身份识别</p>
+            <p className="text-xs mt-4" style={{ color: '#8A8798' }}>{FACE_MATCH_ENABLED ? '已获单独同意后上传匹配 · 不做人脸身份识别' : '照片仅本机触发，不上传服务器'}</p>
 
             <div className="mt-10 text-left">
               <h3 className="text-sm font-bold mb-3" style={{ color: '#26215C' }}>明星风格档案（部分）</h3>
               <div className="flex flex-wrap gap-2">
                 {STARS.map((s) => (
-                  <span key={s.name} className="text-[13px] rounded-full px-3 py-2 liquid-glass" style={{ color: '#5D5A75' }}>
+                  <span key={s.name} className="inline-flex items-center gap-2 text-[13px] rounded-full pl-1.5 pr-3 py-1.5 liquid-glass" style={{ color: '#5D5A75' }}>
+                    <Avatar star={s} size={26} />
                     <b style={{ color: '#534AB7' }}>{s.name}</b> {s.tag}
                   </span>
                 ))}
@@ -203,7 +253,7 @@ export default function ZhixianPage() {
           <div className="zx-fade text-center pt-14">
             <div className="flex justify-center"><Compass spinning /></div>
             <h2 className="text-2xl font-bold mt-8" style={{ color: '#26215C' }}>正在分析你的风格</h2>
-            <p className="text-sm mt-2" style={{ color: '#8A8798' }}>不采集人脸 · 不做身份识别 · 即测即弃</p>
+            <p className="text-sm mt-2" style={{ color: '#8A8798' }}>{FACE_MATCH_ENABLED ? '已获同意后调用云端风格匹配' : '照片不上传 · 不读取照片内容 · 不做身份识别'}</p>
             <ul className="mt-8 text-left max-w-sm mx-auto">
               {stepItems.map((s, i) => (
                 <li
@@ -221,7 +271,7 @@ export default function ZhixianPage() {
                 </li>
               ))}
             </ul>
-            {photo && <p className="text-xs mt-6" style={{ color: '#8A8798' }}>已本地读取照片（不上传服务器）</p>}
+            {photoTouched && <p className="text-xs mt-6" style={{ color: '#8A8798' }}>{FACE_MATCH_ENABLED ? '已读取照片并发起匹配请求' : '已选择照片（本机触发，未读取内容、未上传）'}</p>}
           </div>
         )}
 
@@ -229,7 +279,8 @@ export default function ZhixianPage() {
         {stage === 'result' && top1 && (
           <div className="zx-fade pt-4">
             <div className="text-center">
-              <span className="inline-block text-xs font-bold rounded-full px-3 py-1" style={{ background: '#FAEEDA', color: '#854F0B' }}>你的明星分身</span>
+              <span className="inline-block text-xs font-bold rounded-full px-3 py-1" style={{ background: '#FAEEDA', color: '#854F0B' }}>你的风格分身</span>
+              {isMockResult && <span className="inline-block text-[11px] font-bold rounded-full px-2 py-0.5 ml-2" style={{ background: '#EEEDFE', color: '#534AB7' }}>演示结果</span>}
               <div className="text-4xl font-extrabold mt-3" style={{ color: '#26215C' }}>
                 <span style={{ color: '#534AB7' }}>{city}</span>分腾
               </div>
@@ -251,7 +302,10 @@ export default function ZhixianPage() {
             <div className="mt-7 rounded-3xl p-5 flex items-center gap-4" style={{ background: 'linear-gradient(160deg,#fff,#EEEDFE)', border: '1px solid #CECBF6' }}>
               <Ring pct={top1.pct} />
               <div className="min-w-0">
-                <div className="text-xl font-extrabold" style={{ color: '#26215C' }}>{top1.name}</div>
+                <div className="flex items-center gap-2.5">
+                  <Avatar star={top1} size={48} />
+                  <div className="text-xl font-extrabold" style={{ color: '#26215C' }}>{top1.name}</div>
+                </div>
                 <span className="inline-block text-xs rounded-full px-2 py-0.5 mt-1.5" style={{ background: '#FAEEDA', color: '#854F0B' }}>{top1.tag}</span>
                 <p className="text-[13px] mt-2 leading-relaxed" style={{ color: '#5D5A75' }}>{top1.desc}</p>
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -272,6 +326,7 @@ export default function ZhixianPage() {
                   className="w-full flex items-center gap-3 rounded-2xl bg-white border border-[#E4E2EC] px-4 py-3 mb-2 text-left"
                 >
                   <span className="text-[13px] font-extrabold w-4" style={{ color: '#8A8798' }}>{idx + 1}</span>
+                  <Avatar star={s} size={40} />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[15px] font-bold" style={{ color: '#2A2740' }}>{s.name}</span>
                     <span className="block text-xs" style={{ color: '#8A8798' }}>{s.tag}</span>
@@ -295,6 +350,7 @@ export default function ZhixianPage() {
               <button onClick={() => setConsentOpen(true)} className="flex-1 text-sm font-semibold rounded-xl py-3 liquid-glass" style={{ color: '#5D5A75' }}>换一张重测</button>
               <button onClick={() => showToast(`已生成分享卡：「${city}分腾 · ${top1.name} ${top1.pct}%」（演示）`)} className="flex-1 text-sm font-semibold rounded-xl py-3 liquid-glass" style={{ color: '#5D5A75' }}>分享给朋友</button>
             </div>
+            <p className="text-[11px] leading-relaxed text-center mt-3" style={{ color: '#8A8798' }}>{isMockResult ? '演示结果随机生成，仅代表风格参考。' : '结果由云端相似度接口生成，仅代表娱乐参考。'}页面不展示明星照片，也不提供换脸 / 深度合成能力。</p>
           </div>
         )}
 
@@ -385,14 +441,19 @@ export default function ZhixianPage() {
       {consentOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(20,17,40,.55)' }} onClick={() => setConsentOpen(false)}>
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-center mb-4" style={{ color: '#26215C' }}>上传前，请确认</h3>
+            <h3 className="text-lg font-bold text-center mb-4" style={{ color: '#26215C' }}>选择照片前，请确认</h3>
             <ul className="mb-5 space-y-2">
-              {[
-                '本功能仅用于「风格相似度」娱乐分析，不用于身份识别。',
-                '照片仅本次实时计算，即测即弃，不落库、不向第三方提供。',
+              {(FACE_MATCH_ENABLED ? [
+                '本功能用于「风格相似度」娱乐匹配，不做人脸身份识别，不绑定账号或真实身份。',
+                '你需明确同意：照片会上传至芥子后端，并调用腾讯云人脸搜索接口完成相似度匹配。',
+                '芥子应用侧不保存原图、不落库；云服务商按其隐私政策处理请求数据。',
+                '不提供换脸 / 深度合成等生成能力；未成年人不提供本功能。',
+              ] : [
+                '本功能仅用于「风格相似度」娱乐分析，不用于身份识别；演示结果随机生成。',
+                '纯前端演示：照片只留在本机，不上传服务器、不落库、不向第三方提供。',
                 '不提供换脸 / 深度合成等生成能力。',
                 '未成年人不提供本功能。',
-              ].map((t) => (
+              ]).map((t) => (
                 <li key={t} className="text-sm leading-relaxed rounded-xl px-3.5 py-2.5 pl-9 relative" style={{ background: '#F6F5FA', color: '#5D5A75' }}>
                   <span className="absolute left-3.5 top-[18px] w-2 h-2 rounded-full" style={{ background: '#BA7517' }} />
                   {t}
@@ -404,7 +465,7 @@ export default function ZhixianPage() {
               className="w-full rounded-2xl text-white font-bold text-base py-3.5"
               style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}
             >
-              同意并上传照片
+              {FACE_MATCH_ENABLED ? '我已成年，同意上传并调用云端匹配' : '我已成年，同意并选择照片'}
             </button>
             <button onClick={() => setConsentOpen(false)} className="w-full text-sm font-semibold py-3 mt-1" style={{ color: '#5D5A75' }}>暂不</button>
           </div>

@@ -79,6 +79,55 @@ end
 return tostring(-2)
 `;
 
+const CREDIT_ONCE_SCRIPT = `
+local creditKey = KEYS[1]
+local entitlementKey = KEYS[2]
+local amount = tonumber(ARGV[1])
+local createdAt = tonumber(ARGV[2]) or 0
+local data = redis.call('GET', creditKey)
+if not data then return tostring(-1) end
+local record = cjson.decode(data)
+if redis.call('EXISTS', entitlementKey) == 1 then
+  return tostring(record.balance or 0)
+end
+if (record.balance or 0) < amount then return tostring(-1) end
+record.balance = record.balance - amount
+redis.call('SET', creditKey, cjson.encode(record))
+redis.call('SET', entitlementKey, cjson.encode({
+  created_at = createdAt,
+  amount = amount
+}))
+return tostring(record.balance)
+`;
+
+export async function kvUseCreditsOnce(
+  key: string,
+  entitlementKey: string,
+  amount: number,
+  createdAt = Date.now(),
+): Promise<number> {
+  if (kv) {
+    try {
+      const result = await kv.eval(CREDIT_ONCE_SCRIPT, [key, entitlementKey], [
+        String(amount),
+        String(createdAt),
+      ]);
+      return parseInt(String(result), 10);
+    } catch {
+      return -1;
+    }
+  }
+
+  const data = mem.get(key);
+  if (!data) return -1;
+  const record = JSON.parse(data) as { balance: number };
+  if (mem.has(entitlementKey)) return record.balance;
+  if (record.balance < amount) return -1;
+  record.balance -= amount;
+  mem.set(key, JSON.stringify(record));
+  mem.set(entitlementKey, JSON.stringify({ created_at: createdAt, amount }));
+  return record.balance;
+}
 export async function kvUseCredits(key: string, amount: number): Promise<number> {
   if (kv) {
     try {

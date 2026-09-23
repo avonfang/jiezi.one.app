@@ -1,4 +1,4 @@
-import { kvGet, kvSet, kvUseCredits, kvAddCredits } from './kv-store';
+import { kvGet, kvSet, kvUseCredits, kvUseCreditsOnce, kvAddCredits } from './kv-store';
 
 function creditKey(userId: string) {
   return `credits:${userId}`;
@@ -21,13 +21,25 @@ export async function getBalance(userId: string): Promise<number> {
   return record?.balance ?? 0;
 }
 
-export async function useCredit(userId: string): Promise<boolean> {
-  return useCredits(userId, 1);
+export async function spendCredit(userId: string): Promise<boolean> {
+  return spendCredits(userId, 1);
 }
 
-export async function useCredits(userId: string, amount: number): Promise<boolean> {
+export async function spendCredits(userId: string, amount: number): Promise<boolean> {
   const result = await kvUseCredits(creditKey(userId), amount);
   return result >= 0;
+}
+
+/**
+ * 原子扣减一次积分，并写入一次性权益 key。
+ * 重复请求同一 entitlementKey 不会重复扣费。
+ */
+export async function spendCreditsOnce(
+  userId: string,
+  amount: number,
+  entitlementKey: string,
+): Promise<number> {
+  return kvUseCreditsOnce(creditKey(userId), entitlementKey, amount);
 }
 
 export async function addCredits(userId: string, amount: number): Promise<number> {
