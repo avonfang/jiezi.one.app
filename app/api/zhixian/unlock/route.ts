@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { initCredits, spendCreditsOnce } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
 
-const DEFAULT_UNLOCK_COST = 60;
+const DEFAULT_UNLOCK_COST = 6;
 
 function parseCost(): number {
   const value = Number.parseInt(process.env.ZHIXIAN_UNLOCK_CREDIT_COST || '', 10);

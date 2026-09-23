@@ -72,7 +72,7 @@ export default function ZhixianPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [resultId, setResultId] = useState('');
   const [balance, setBalance] = useState<number | null>(null);
-  const [cost, setCost] = useState(60);
+  const [cost, setCost] = useState(6);
   const [unlocking, setUnlocking] = useState(false);
   const [needRecharge, setNeedRecharge] = useState(false);
 
