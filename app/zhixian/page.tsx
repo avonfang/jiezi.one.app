@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 import { STARS, type Star } from '@/lib/zhixian/stars';
+import { getAuthHeaders } from '@/lib/client-id';
 
 const TAB_LABELS = ['造型', '名场面', '脚本', '发布策略'];
 const FACE_MATCH_ENABLED = process.env.NEXT_PUBLIC_ZHIXIAN_FACE_MATCH_ENABLED === 'true';
@@ -69,6 +70,11 @@ export default function ZhixianPage() {
   const [isMockResult, setIsMockResult] = useState(true);
   const [steps, setSteps] = useState<number>(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [resultId, setResultId] = useState('');
+  const [balance, setBalance] = useState<number | null>(null);
+  const [cost, setCost] = useState(60);
+  const [unlocking, setUnlocking] = useState(false);
+  const [needRecharge, setNeedRecharge] = useState(false);
 
   const top1 = top3[top1Index];
 
@@ -76,6 +82,22 @@ export default function ZhixianPage() {
     setToast(msg);
     window.setTimeout(() => setToast(''), 1800);
   }
+
+  async function refreshBalance() {
+    try {
+      const res = await fetch('/api/credits', { headers: getAuthHeaders() });
+      const data = await res.json();
+      if (typeof data.balance === 'number') setBalance(data.balance);
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => {
+    refreshBalance();
+    fetch('/api/zhixian/unlock', { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.cost === 'number') setCost(d.cost); })
+      .catch(() => {});
+  }, []);
 
   function pickTop3(): Star[] {
     const start = Math.floor(Math.random() * STARS.length);
@@ -135,6 +157,8 @@ export default function ZhixianPage() {
     setTop1Index(0);
     setUnlocked([true, false, false, false]);
     setCurrentTab(0);
+    setNeedRecharge(false);
+    setResultId('zx' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
     setStage('result');
   }
 
@@ -165,10 +189,36 @@ export default function ZhixianPage() {
     }
   }
 
-  function unlockAll() {
-    setPayOpen(false);
-    setUnlocked([true, true, true, true]);
-    showToast('已解锁（演示环境不真实扣费）');
+  async function unlockAll() {
+    if (!resultId) {
+      showToast('请先完成分析');
+      return;
+    }
+    setUnlocking(true);
+    setNeedRecharge(false);
+    try {
+      const res = await fetch('/api/zhixian/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ resultId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setUnlocked([true, true, true, true]);
+        if (typeof data.balance === 'number') setBalance(data.balance);
+        setPayOpen(false);
+        showToast('解锁成功，完整指路卡已开启');
+      } else if (data.code === 'INSUFFICIENT_CREDITS' || res.status === 402) {
+        setNeedRecharge(true);
+        refreshBalance();
+      } else {
+        showToast(data.error || '解锁失败，请稍后重试');
+      }
+    } catch {
+      showToast('解锁失败，请稍后重试');
+    } finally {
+      setUnlocking(false);
+    }
   }
 
   const stepItems = ['提取风格特征', '匹配明星风格档案', '生成相似度报告', '生成仙人指路卡'];
@@ -411,7 +461,7 @@ export default function ZhixianPage() {
                 <p className="text-sm mt-3 mb-4 leading-relaxed" style={{ color: '#5D5A75' }}>
                   「{TAB_LABELS[currentTab]}」是完整指路卡的一部分。<br />解锁后可查看可执行的模仿建议。
                 </p>
-                <button onClick={() => setPayOpen(true)} className="inline-block rounded-xl text-white font-semibold text-[15px] px-7 py-3" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
+                <button onClick={() => { setPayOpen(true); setNeedRecharge(false); refreshBalance(); }} className="inline-block rounded-xl text-white font-semibold text-[15px] px-7 py-3" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
                   解锁完整指路卡
                 </button>
               </div>
@@ -463,12 +513,24 @@ export default function ZhixianPage() {
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-center mb-2" style={{ color: '#26215C' }}>解锁完整指路卡</h3>
             <div className="text-center mb-5">
-              <b className="text-3xl" style={{ color: '#534AB7' }}>60 积分</b>
-              <span className="block text-[13px] mt-1.5" style={{ color: '#8A8798' }}>名场面 · 脚本 · 发布策略（演示环境不真实扣费）</span>
+              <b className="text-3xl" style={{ color: '#534AB7' }}>{cost} 积分</b>
+              <span className="block text-[13px] mt-1.5" style={{ color: '#8A8798' }}>名场面 · 脚本 · 发布策略 · 解锁后永久可看</span>
+              <span className="block text-[13px] mt-2" style={{ color: balance === null ? '#8A8798' : (balance >= cost ? '#0F6E56' : '#BA7517') }}>
+                {balance === null ? '正在查询积分…' : `当前积分：${balance}`}
+              </span>
             </div>
-            <button onClick={unlockAll} className="w-full rounded-2xl text-white font-bold text-base py-3.5" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
-              模拟支付并解锁
-            </button>
+            {needRecharge ? (
+              <>
+                <p className="text-sm text-center mb-4 leading-relaxed" style={{ color: '#BA7517' }}>积分不足，需 {cost} 积分解锁，当前 {balance ?? 0} 积分。</p>
+                <Link href="/pricing" target="_blank" className="block w-full rounded-2xl text-white font-bold text-base py-3.5 text-center" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
+                  去充值积分
+                </Link>
+              </>
+            ) : (
+              <button onClick={unlockAll} disabled={unlocking} className="w-full rounded-2xl text-white font-bold text-base py-3.5 disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
+                {unlocking ? '解锁中…' : `支付 ${cost} 积分解锁`}
+              </button>
+            )}
             <button onClick={() => setPayOpen(false)} className="w-full text-sm font-semibold py-3 mt-1" style={{ color: '#5D5A75' }}>暂不</button>
           </div>
         </div>
