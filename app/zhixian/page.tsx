@@ -368,6 +368,7 @@ export default function ZhixianPage() {
               </div>
             </div>
 
+            {top3.length > 1 && (<>
             <h3 className="text-sm font-bold mt-6 mb-2.5" style={{ color: '#26215C' }}>其他可能（点击可切换主分身）</h3>
             {top3.map((s, idx) => {
               if (idx === top1Index) return null;
@@ -390,6 +391,8 @@ export default function ZhixianPage() {
                 </button>
               );
             })}
+            </>
+            )}
 
             <button
               onClick={() => { setCurrentTab(0); setStage('card'); }}
