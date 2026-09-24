@@ -475,49 +475,75 @@ export default function ZhixianPage() {
 
             {unlocked[currentTab] ? (
               <div className="rounded-2xl bg-white border border-[#E4E2EC] p-5 mb-3">
+                <div className="rounded-xl px-4 py-3 mb-4" style={{ background: 'linear-gradient(135deg,#EEEDFE,#FAEEDA)' }}>
+                  <div className="text-[12px] font-bold" style={{ color: '#854F0B' }}>你的「{city}分{top1.name}」人设</div>
+                  <div className="text-[13px] mt-1 leading-relaxed" style={{ color: '#5D5A75' }}>风格：{top1.tag} · 相似度 {top1.pct}% · 招牌记忆点：{top1.catch || '自带喜感'}</div>
+                </div>
+
                 {currentTab === 0 && (
                   <>
                     <h4 className="text-[15px] font-bold mb-3 flex items-center gap-2" style={{ color: '#26215C' }}>造型方向 <span className="text-[10px] font-bold rounded px-1.5 py-0.5" style={{ background: '#FAEEDA', color: '#854F0B' }}>免费</span></h4>
-                    <ul className="space-y-1.5">
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>发型/眉形：</b>参照「{top1.tag}」的轮廓感，先别大改，用眉形和发胶做出“像”的第一印象。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>服装色系：</b>选{top1.name}常穿的深色/大地色系，避免高饱和潮牌，突出“家常感”。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>表情管理：</b>核心是“不使劲”——半眯眼、似笑非笑，把{top1.tag}的松弛感演出来。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>道具：</b>一个保温杯 / 一件旧衬衫，比任何滤镜都管用。</li>
+                    <p className="text-xs mb-3 leading-relaxed" style={{ color: '#8A8798' }}>先抓住「{top1.tag}」的气质关键词，再用妆造把“像”的占比拉满。</p>
+                    <ul className="space-y-2">
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>发型：</b>参照「{top1.name}」的轮廓感（{top1.dims[0] || '脸型轮廓'}），先别大改，用发蜡/假发片把轮廓做出来。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>眉形/眼妆：</b>重点做「{top1.dims[1] || '眼型弧度'}」，这是“一眼像”的关键。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>服装色系：</b>选{top1.name}常穿的深色/大地色，避免高饱和潮牌，突出“家常感”。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>表情管理：</b>核心是“不使劲”——把「{top1.dims[2] || '神态'}」做出来，神韵就对了。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>标志动作：</b>设计一个反复出现的小动作（抿嘴/挑眉/摊手），比任何滤镜都像。</li>
                     </ul>
+                    <div className="rounded-xl px-4 py-3 mt-4" style={{ background: '#EEEDFE' }}>
+                      <div className="text-[11px] font-bold mb-1" style={{ color: '#534AB7' }}>招牌口头禅（背下来）</div>
+                      <div className="text-[15px] font-bold" style={{ color: '#26215C' }}>{top1.catch || '自带喜感'}</div>
+                    </div>
                   </>
                 )}
+
                 {currentTab === 1 && (
                   <>
                     <h4 className="text-[15px] font-bold mb-3" style={{ color: '#26215C' }}>名场面翻拍</h4>
-                    <ul className="space-y-1.5">
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}>场景① 办公室里，同事在卷，你端着茶杯慢悠悠来一句“<b style={{ color: '#854F0B' }}>多大点事儿啊</b>”。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}>场景② 电梯偶遇前同事，尬聊三秒后用{top1.name}式的假笑收尾。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}>场景③ 深夜加完班，对着镜头苦笑一声，配文“<b style={{ color: '#854F0B' }}>这班，也不是非上不可</b>”。</li>
+                    <p className="text-xs mb-3 leading-relaxed" style={{ color: '#8A8798' }}>翻拍「{top1.name}」的经典片段是涨粉最快的路径，先刷熟这几部：</p>
+                    {(top1.hits || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {(top1.hits || []).map((h) => (
+                          <span key={h} className="text-[12px] rounded-lg px-2 py-1 bg-white" style={{ color: '#534AB7', border: '1px solid #CECBF6' }}>{h}</span>
+                        ))}
+                      </div>
+                    )}
+                    <ul className="space-y-2">
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>场景①</b> 办公室里同事在卷，你端着茶杯慢悠悠来一句“<b style={{ color: '#854F0B' }}>{top1.catch || '多大点事儿啊'}</b>”。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>场景②</b> 电梯偶遇前同事，尬聊三秒后用一个{top1.name}式的假笑收尾。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>场景③</b> 深夜加完班，对着镜头苦笑一声，配文“这班，也不是非上不可”。</li>
                     </ul>
+                    <div className="text-xs mt-4 leading-relaxed" style={{ color: '#8A8798' }}>拍摄：竖屏、自然光、固定机位；先拍“反应”，再拍“动作”，最后补一句口头禅收尾。</div>
                   </>
                 )}
+
                 {currentTab === 2 && (
                   <>
                     <h4 className="text-[15px] font-bold mb-3" style={{ color: '#26215C' }}>15 秒短视频脚本</h4>
+                    <p className="text-xs mb-3 leading-relaxed" style={{ color: '#8A8798' }}>一条能用的「像谁」短视频，按下面节奏拍：</p>
                     {[
-                      `【0-3s】特写：你对着镜子，突然发现自己有“${top1.name}”的神韵，愣住。`,
-                      '【3-9s】切换 3 个模仿动作/表情，逐条叠出“像在哪”。',
-                      `【9-12s】甩出分身名“${city}分${top1.name}”，画面定格。`,
-                      '【12-15s】字幕：“你的分身是谁？来测”→ 引导扫码。',
+                      '【0-2s】钩子｜特写：你对着镜子，突然发现自己有“' + top1.name + '”的神韵，愣住。字幕：我发现我有点眼熟。',
+                      '【2-6s】铺垫｜快速切 3 个模仿动作/表情，逐个叠出“像在哪”（' + (top1.dims || []).join('、') + '）。',
+                      '【6-10s】爆点｜甩出分身名“' + city + '分' + top1.name + '”，来一句招牌“' + (top1.catch || '') + '”，画面定格。',
+                      '【10-15s】引导｜字幕：“你的分身是谁？来测” + 箭头指向左下角，引导扫码/点击。',
                     ].map((line) => (
                       <div key={line} className="text-[13px] rounded-xl px-3 py-2.5 mb-2" style={{ background: '#EEEDFE', color: '#5D5A75' }}>{line}</div>
                     ))}
+                    <div className="text-xs mt-3 leading-relaxed" style={{ color: '#8A8798' }}>BGM：轻快卡点/喜剧音效；运镜：前半手持微晃增加真实感，后半固定机位定格。</div>
                   </>
                 )}
+
                 {currentTab === 3 && (
                   <>
                     <h4 className="text-[15px] font-bold mb-3" style={{ color: '#26215C' }}>发布策略</h4>
-                    <ul className="space-y-1.5">
+                    <ul className="space-y-2">
                       <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>发布时间：</b>工作日 12:00-13:00 或 20:00-22:00，蹭通勤/睡前流量。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>标题公式：</b>“都让我模仿{top1.name}，试了一下……” / “被说像{top1.name}的第 N 天”。</li>
                       <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>话题标签：</b>#仙人指路 #{top1.name} #素人模仿 #我的明星分身。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>标题：</b>“都让我模仿{top1.name}，试了一下……”（避免“必火/保证”类承诺）。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>封面：</b>用你最像的一个定格表情，不加美颜滤镜。</li>
-                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>建议：</b>连发 3 条测试，看哪条更容易被推荐，再集中复刻。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>封面：</b>用最像的一个定格表情，文字压一行“像不像{top1.name}？”。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>评论区钩子：</b>置顶“你觉得更像谁？”，引导互动涨评论。</li>
+                      <li className="text-sm leading-relaxed" style={{ color: '#5D5A75' }}><b style={{ color: '#854F0B' }}>连发测试：</b>连发 3 条不同场景，看哪条进流量池，再集中复刻同款。</li>
                     </ul>
                   </>
                 )}
