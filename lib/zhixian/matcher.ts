@@ -13,6 +13,8 @@ export type MatchResponse = {
 };
 
 const GROUP_ID = process.env.TENCENT_FACE_GROUP_ID || 'zhixian_stars_v1';
+// 腾讯人员库置信度阈值（0-100），低于此值视为无有效相似结果。
+const TENCENT_MIN_SCORE = 75;
 
 function scoreToPct(score: number): number {
   // 腾讯 Score 是 0-100 置信度，先粗映射为展示分，后续标定。
@@ -69,6 +71,8 @@ async function tryTencent(imageBase64: string): Promise<MatchResponse | null> {
     const byId = new Map(STARS.map((s) => [s.id, s]));
     const top3: Star[] = [];
     for (const c of candidates) {
+      // 腾讯人员库目前只有极少量明星，低于阈值的结果没有参考价值，直接丢弃。
+      if (c.score < TENCENT_MIN_SCORE) continue;
       const star = byId.get(c.personId);
       if (star) top3.push({ ...star, pct: scoreToPct(c.score) });
       if (top3.length >= 3) break;
