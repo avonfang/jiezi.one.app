@@ -104,6 +104,10 @@ export default function ZhixianPage() {
   const [cost, setCost] = useState(6);
   const [unlocking, setUnlocking] = useState(false);
   const [needRecharge, setNeedRecharge] = useState(false);
+  const [freeRemaining, setFreeRemaining] = useState(2);
+  const [testCost, setTestCost] = useState(1);
+  const [payMode, setPayMode] = useState<'unlock' | 'test'>('unlock');
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
 
   const top1 = top3[top1Index];
 
@@ -125,6 +129,14 @@ export default function ZhixianPage() {
     fetch('/api/zhixian/unlock', { headers: getAuthHeaders() })
       .then((r) => r.json())
       .then((d) => { if (typeof d.cost === 'number') setCost(d.cost); })
+      .catch(() => {});
+    fetch('/api/zhixian/quota', { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.freeRemaining === 'number') setFreeRemaining(d.freeRemaining);
+        if (typeof d.testCost === 'number') setTestCost(d.testCost);
+        if (typeof d.balance === 'number') setBalance(d.balance);
+      })
       .catch(() => {});
   }, []);
 
@@ -161,8 +173,17 @@ export default function ZhixianPage() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setPhoto(reader.result as string);
-      runAnalysis(reader.result as string);
+      const img = reader.result as string;
+      setPhoto(img);
+      if (freeRemaining <= 0) {
+        setPendingImage(img);
+        setPayMode('test');
+        setNeedRecharge(false);
+        setPayOpen(true);
+        refreshBalance();
+        return;
+      }
+      runAnalysis(img);
     };
     reader.onerror = () => showToast('读取照片失败');
     reader.readAsDataURL(f);
@@ -196,8 +217,17 @@ export default function ZhixianPage() {
       new Promise<void>((resolve) => window.setTimeout(resolve, 3500)),
     ]);
 
+    if (apiResult?.error === 'INSUFFICIENT_CREDITS') {
+      setStage('home');
+      setPayMode('test');
+      setNeedRecharge(true);
+      setPayOpen(true);
+      refreshBalance();
+      return;
+    }
     const list = apiResult?.top3?.length ? apiResult.top3 : pickTop3();
     setIsMockResult(!apiResult || apiResult.mock);
+    if (typeof apiResult?.freeRemaining === 'number') setFreeRemaining(apiResult.freeRemaining);
     setTop3(list);
     loadPhotos(list);
     setTop1Index(0);
@@ -208,17 +238,20 @@ export default function ZhixianPage() {
     setStage('result');
   }
 
-  async function matchApi(image: string | null): Promise<{ top3: Star[]; mock: boolean } | null> {
+  async function matchApi(image: string | null): Promise<{ top3: Star[]; mock: boolean; freeRemaining?: number; error?: string } | null> {
     if (!image || !FACE_MATCH_ENABLED) return null;
     try {
       const res = await fetch('/api/zhixian/match', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ image, consentFaceSearch: true }),
       });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.top3)) {
-        return { top3: data.top3 as Star[], mock: !!data.mock };
+        return { top3: data.top3 as Star[], mock: !!data.mock, freeRemaining: data.quota?.freeRemaining };
+      }
+      if (data.code === 'INSUFFICIENT_CREDITS' || res.status === 402) {
+        return { top3: [], mock: false, error: 'INSUFFICIENT_CREDITS' };
       }
     } catch (error) {
       console.error('match api error', error);
@@ -250,6 +283,13 @@ export default function ZhixianPage() {
     } else {
       showToast('当前浏览器不支持分享，请截图分享');
     }
+  }
+
+  function continueTest() {
+    const img = pendingImage;
+    setPendingImage(null);
+    setPayOpen(false);
+    if (img) runAnalysis(img);
   }
 
   async function unlockAll() {
@@ -604,24 +644,24 @@ export default function ZhixianPage() {
       {payOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(20,17,40,.55)' }} onClick={() => setPayOpen(false)}>
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-center mb-2" style={{ color: '#26215C' }}>解锁完整指路卡</h3>
+            <h3 className="text-lg font-bold text-center mb-2" style={{ color: '#26215C' }}>{payMode === 'test' ? '免费测试已用完' : '解锁完整指路卡'}</h3>
             <div className="text-center mb-5">
-              <b className="text-3xl" style={{ color: '#534AB7' }}>{cost} 积分</b>
-              <span className="block text-[13px] mt-1.5" style={{ color: '#8A8798' }}>名场面 · 脚本 · 发布策略 · 解锁后永久可看</span>
-              <span className="block text-[13px] mt-2" style={{ color: balance === null ? '#8A8798' : (balance >= cost ? '#0F6E56' : '#BA7517') }}>
+              <b className="text-3xl" style={{ color: '#534AB7' }}>{payMode === 'test' ? testCost : cost} 积分</b>
+              <span className="block text-[13px] mt-1.5" style={{ color: '#8A8798' }}>{payMode === 'test' ? '每次测试消耗 1 积分，测完即出相似度报告' : '名场面 · 脚本 · 发布策略 · 解锁后永久可看'}</span>
+              <span className="block text-[13px] mt-2" style={{ color: balance === null ? '#8A8798' : (balance >= (payMode === 'test' ? testCost : cost) ? '#0F6E56' : '#BA7517') }}>
                 {balance === null ? '正在查询积分…' : `当前积分：${balance}`}
               </span>
             </div>
             {needRecharge ? (
               <>
-                <p className="text-sm text-center mb-4 leading-relaxed" style={{ color: '#BA7517' }}>积分不足，需 {cost} 积分解锁，当前 {balance ?? 0} 积分。</p>
+                <p className="text-sm text-center mb-4 leading-relaxed" style={{ color: '#BA7517' }}>积分不足，需 {payMode === 'test' ? testCost : cost} 积分，当前 {balance ?? 0} 积分。</p>
                 <Link href="/pricing" target="_blank" className="block w-full rounded-2xl text-white font-bold text-base py-3.5 text-center" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
                   去充值积分
                 </Link>
               </>
             ) : (
-              <button onClick={unlockAll} disabled={unlocking} className="w-full rounded-2xl text-white font-bold text-base py-3.5 disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
-                {unlocking ? '解锁中…' : `支付 ${cost} 积分解锁`}
+              <button onClick={payMode === 'test' ? continueTest : unlockAll} disabled={unlocking} className="w-full rounded-2xl text-white font-bold text-base py-3.5 disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #534AB7, #3C3489)' }}>
+                {payMode === 'test' ? `支付 ${testCost} 积分继续测` : (unlocking ? '解锁中…' : `支付 ${cost} 积分解锁`)}
               </button>
             )}
             <button onClick={() => setPayOpen(false)} className="w-full text-sm font-semibold py-3 mt-1" style={{ color: '#5D5A75' }}>暂不</button>

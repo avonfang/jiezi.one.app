@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { matchTop3 } from '@/lib/zhixian/matcher';
+import { initCredits, spendCredits } from '@/lib/credits';
+import { getUserIdFromRequest } from '@/lib/get-user';
+import { consumeFreeTest, FREE_TEST_LIMIT, TEST_COST } from '@/lib/zhixian/quota';
 
 // base64 图片大小上限（约 4MB），超出直接拒绝，保护函数实例。
 const MAX_IMAGE_CHARS = 5_500_000;
@@ -28,8 +31,34 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: '图片过大，请压缩后重试' }, { status: 413 });
     }
 
+    // 免费额度 + 积分扣费：前 2 次免费，之后每次扣积分。
+    const userId = getUserIdFromRequest(request);
+    const quota = { freeRemaining: 0, paid: false, testCost: TEST_COST };
+    if (userId) {
+      await initCredits(userId);
+      const consumed = await consumeFreeTest(userId);
+      if (consumed.free) {
+        quota.freeRemaining = Math.max(0, FREE_TEST_LIMIT - consumed.used);
+      } else {
+        const ok = await spendCredits(userId, TEST_COST);
+        if (!ok) {
+          return Response.json(
+            {
+              success: false,
+              code: "INSUFFICIENT_CREDITS",
+              error: "免费测试次数已用完，积分不足，请充值后继续",
+              cost: TEST_COST,
+            },
+            { status: 402 },
+          );
+        }
+        quota.paid = true;
+        quota.freeRemaining = 0;
+      }
+    }
+
     const { mock, top3, engine } = await matchTop3(image);
-    return Response.json({ success: true, mock, top3, engine });
+    return Response.json({ success: true, mock, top3, engine, quota });
   } catch (error) {
     console.error('zhixian match error:', error);
     return Response.json({ success: false, error: '匹配失败，请稍后重试' }, { status: 500 });
