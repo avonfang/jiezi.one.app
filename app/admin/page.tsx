@@ -95,13 +95,22 @@ interface RegisteredUser {
   createdAt: number;
 }
 
+interface Stats {
+  totalVisits: number;
+  todayVisits: number;
+  totalUv: number;
+  todayUv: number;
+  registeredUsers: number;
+  days: { date: string; visits: number }[];
+}
+
 const PLAN_NAMES: Record<string, string> = {
   single: '1 积分',
   triple: '3 积分',
   ten: '10 积分',
 };
 
-type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits';
+type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits' | 'stats';
 
 export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState('');
@@ -115,6 +124,7 @@ export default function AdminPage() {
   const [genCount, setGenCount] = useState(5);
   const [genResult, setGenResult] = useState<ActivationCode[] | null>(null);
   const [tab, setTab] = useState<Tab>('codes');
+  const [stats, setStats] = useState<Stats | null>(null);
 
   // Credits lookup
   const [lookupUserId, setLookupUserId] = useState('');
@@ -157,6 +167,10 @@ export default function AdminPage() {
     }
   }, [adminFetch]);
 
+  const loadStats = useCallback(() => {
+    adminFetch('/api/admin/stats').then((r) => r.json()).then((d) => setStats(d)).catch(() => {});
+  }, [adminFetch]);
+
   const handleLogin = (password: string) => {
     setAdminPassword(password);
     setAuthed(true);
@@ -167,6 +181,10 @@ export default function AdminPage() {
       loadOrders(); loadCodes(); loadFeedbacks(); loadUsers();
     }
   }, [authed, loadOrders, loadCodes, loadFeedbacks, loadUsers]);
+
+  useEffect(() => {
+    if (authed && tab === 'stats') loadStats();
+  }, [authed, tab, loadStats]);
 
   const handleConfirm = async (orderId: string) => {
     await adminFetch('/api/orders/confirm', {
@@ -248,7 +266,7 @@ export default function AdminPage() {
             <h1 className="text-xl font-bold text-gray-900 inline">管理后台</h1>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {([['users', '用户'], ['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数']] as [Tab, string][]).map(([key, label]) => (
+            {([['users', '用户'], ['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数'], ['stats', '统计']] as [Tab, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -484,6 +502,48 @@ export default function AdminPage() {
                   {lookupMsg && lookupResult && <p className="text-sm text-green-600 mt-2">{lookupMsg}</p>}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+        {/* ====== Stats Tab ====== */}
+        {tab === 'stats' && (
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+              <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+                <div className="text-xs text-gray-500">总访问次数</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalVisits ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+                <div className="text-xs text-gray-500">今日访问</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.todayVisits ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+                <div className="text-xs text-gray-500">总独立访客 (UV)</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalUv ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+                <div className="text-xs text-gray-500">今日独立访客</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.todayUv ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+                <div className="text-xs text-gray-500">注册用户数</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.registeredUsers ?? 0}</div>
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-900">近 7 天访问趋势</h2>
+                <button onClick={loadStats} className="text-sm text-gray-500 hover:text-gray-700">刷新</button>
+              </div>
+              <div className="flex items-end gap-2 h-36">
+                {(stats?.days || []).map((d) => (
+                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-gray-500">{d.visits}</span>
+                    <div className="w-full rounded-t" style={{ height: Math.max(4, Math.round((d.visits / Math.max(1, ...(stats?.days || []).map((x) => x.visits))) * 100)), background: 'linear-gradient(180deg,#4f8bff,#2563eb)' }} />
+                    <span className="text-[10px] text-gray-400">{d.date}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

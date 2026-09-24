@@ -168,3 +168,66 @@ export async function kvAddCredits(key: string, amount: number, createdAt?: numb
   mem.set(key, JSON.stringify(record));
   return record.balance;
 }
+
+
+// ── 通用计数 / 集合操作（用于访问统计等） ─────────────────────────
+
+const INCR_SCRIPT = `local key = KEYS[1]
+local by = tonumber(ARGV[1]) or 1
+local n = tonumber(redis.call('GET', key)) or 0
+n = n + by
+redis.call('SET', key, tostring(n))
+return tostring(n)`;
+
+const SADD_SCRIPT = `local key = KEYS[1]
+local member = ARGV[1]
+redis.call('SADD', key, member)
+return tostring(redis.call('SCARD', key))`;
+
+const SCARD_SCRIPT = `local key = KEYS[1]
+return tostring(redis.call('SCARD', key))`;
+
+const memSets = new Map<string, Set<string>>();
+
+export async function kvIncr(key: string, by = 1): Promise<number> {
+  if (kv) {
+    try {
+      const result = await kv.eval(INCR_SCRIPT, [key], [String(by)]);
+      return parseInt(String(result), 10);
+    } catch {
+      return 0;
+    }
+  }
+  const raw = mem.get(key);
+  const n = raw ? (JSON.parse(raw) as number) : 0;
+  const next = n + by;
+  mem.set(key, JSON.stringify(next));
+  return next;
+}
+
+export async function kvSadd(key: string, member: string): Promise<number> {
+  if (kv) {
+    try {
+      const result = await kv.eval(SADD_SCRIPT, [key], [member]);
+      return parseInt(String(result), 10);
+    } catch {
+      return 0;
+    }
+  }
+  let set = memSets.get(key);
+  if (!set) { set = new Set(); memSets.set(key, set); }
+  set.add(member);
+  return set.size;
+}
+
+export async function kvScard(key: string): Promise<number> {
+  if (kv) {
+    try {
+      const result = await kv.eval(SCARD_SCRIPT, [key], []);
+      return parseInt(String(result), 10);
+    } catch {
+      return 0;
+    }
+  }
+  return memSets.get(key)?.size ?? 0;
+}
