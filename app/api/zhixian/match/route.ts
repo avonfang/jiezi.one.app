@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: '图片过大，请压缩后重试' }, { status: 413 });
     }
 
-    const { mock, top3 } = await matchTop3(image);
-    return Response.json({ success: true, mock, top3 });
+    const { mock, top3, engine } = await matchTop3(image);
+    return Response.json({ success: true, mock, top3, engine });
   } catch (error) {
     console.error('zhixian match error:', error);
     return Response.json({ success: false, error: '匹配失败，请稍后重试' }, { status: 500 });
