@@ -56,6 +56,29 @@ function Avatar({ star, size = 48 }: { star: Star; size?: number }) {
   );
 }
 
+function FaceScan({ photo }: { photo?: string | null }) {
+  const corners = ["top-2 left-2 border-t-2 border-l-2", "top-2 right-2 border-t-2 border-r-2", "bottom-2 left-2 border-b-2 border-l-2", "bottom-2 right-2 border-b-2 border-r-2"];
+  return (
+    <div className="relative mx-auto overflow-hidden rounded-[28px]" style={{ width: 208, height: 248, background: "#EEEDFE", border: "1px solid #CECBF6", boxShadow: "0 14px 40px rgba(83,74,183,.18)" }}>
+      {photo ? (
+        <img src={photo} alt="待扫描照片" className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 208 248" fill="none">
+          <ellipse cx="104" cy="116" rx="66" ry="82" fill="#fff" stroke="#CECBF6" strokeWidth="2" />
+          <circle cx="80" cy="102" r="6" fill="#D8D4EE" />
+          <circle cx="128" cy="102" r="6" fill="#D8D4EE" />
+          <path d="M92 150 Q104 162 116 150" stroke="#D8D4EE" strokeWidth="3" fill="none" strokeLinecap="round" />
+        </svg>
+      )}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "repeating-linear-gradient(0deg, transparent 0 26px, rgba(83,74,183,.06) 26px 27px)" }} />
+      <div className="absolute left-0 right-0 pointer-events-none" style={{ height: 46, top: 0, animation: "zx-scan 2.4s ease-in-out infinite", background: "linear-gradient(180deg, transparent, rgba(83,74,183,.30) 45%, #534AB7 50%, rgba(83,74,183,.30) 55%, transparent)" }} />
+      {corners.map((cls) => (
+        <span key={cls} className={"absolute w-5 h-5 pointer-events-none " + cls} style={{ borderColor: "#534AB7" }} />
+      ))}
+    </div>
+  );
+}
+
 export default function ZhixianPage() {
   const [stage, setStage] = useState<'home' | 'loading' | 'result' | 'card'>('home');
   const [consentOpen, setConsentOpen] = useState(false);
@@ -67,6 +90,7 @@ export default function ZhixianPage() {
   const [currentTab, setCurrentTab] = useState(0);
   const [toast, setToast] = useState('');
   const [photoTouched, setPhotoTouched] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [isMockResult, setIsMockResult] = useState(true);
   const [steps, setSteps] = useState<number>(0);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -132,6 +156,7 @@ export default function ZhixianPage() {
 
     const reader = new FileReader();
     reader.onload = () => {
+      setPhoto(reader.result as string);
       runAnalysis(reader.result as string);
     };
     reader.onerror = () => showToast('读取照片失败');
@@ -181,7 +206,7 @@ export default function ZhixianPage() {
   }
 
   function copyName() {
-    const txt = `${city}分腾`;
+    const txt = `${city}分${top1.name}`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(() => showToast(`已复制「${txt}」`), () => showToast('复制失败'));
     } else {
@@ -245,6 +270,7 @@ export default function ZhixianPage() {
       <style>{`
         @keyframes zx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes zx-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @keyframes zx-scan { 0% { transform: translateY(0); } 50% { transform: translateY(202px); } 100% { transform: translateY(0); } }
         .zx-fade { animation: zx-fade .35s ease; }
       `}</style>
 
@@ -303,7 +329,7 @@ export default function ZhixianPage() {
         {/* LOADING */}
         {stage === 'loading' && (
           <div className="zx-fade text-center pt-14">
-            <div className="flex justify-center"><Compass spinning /></div>
+            <div className="flex justify-center"><FaceScan photo={photo} /></div>
             <h2 className="text-2xl font-bold mt-8" style={{ color: '#26215C' }}>正在分析你的风格</h2>
             <p className="text-sm mt-2" style={{ color: '#8A8798' }}>{FACE_MATCH_ENABLED ? '已获同意后调用云端风格匹配' : '照片不上传 · 不读取照片内容 · 不做身份识别'}</p>
             <ul className="mt-8 text-left max-w-sm mx-auto">
@@ -334,7 +360,7 @@ export default function ZhixianPage() {
               <span className="inline-block text-xs font-bold rounded-full px-3 py-1" style={{ background: '#FAEEDA', color: '#854F0B' }}>你的风格分身</span>
               {isMockResult && <span className="inline-block text-[11px] font-bold rounded-full px-2 py-0.5 ml-2" style={{ background: '#EEEDFE', color: '#534AB7' }}>演示结果</span>}
               <div className="text-4xl font-extrabold mt-3" style={{ color: '#26215C' }}>
-                <span style={{ color: '#534AB7' }}>{city}</span>分腾
+                <span style={{ color: '#534AB7' }}>{city}</span>分{top1.name}
               </div>
               <div className="flex justify-center gap-2 mt-4">
                 <button onClick={copyName} className="text-sm font-semibold rounded-xl px-4 py-2 liquid-glass" style={{ color: '#5D5A75' }}>复制分身名</button>
@@ -455,7 +481,7 @@ export default function ZhixianPage() {
                     {[
                       `【0-3s】特写：你对着镜子，突然发现自己有“${top1.name}”的神韵，愣住。`,
                       '【3-9s】切换 3 个模仿动作/表情，逐条叠出“像在哪”。',
-                      `【9-12s】甩出分身名“${city}分腾”，画面定格。`,
+                      `【9-12s】甩出分身名“${city}分${top1.name}”，画面定格。`,
                       '【12-15s】字幕：“你的分身是谁？来测”→ 引导扫码。',
                     ].map((line) => (
                       <div key={line} className="text-[13px] rounded-xl px-3 py-2.5 mb-2" style={{ background: '#EEEDFE', color: '#5D5A75' }}>{line}</div>
