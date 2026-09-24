@@ -170,6 +170,8 @@ export default function ZhixianPage() {
 
   function loadPhotos(stars: Star[]) {
     stars.forEach((st, idx) => {
+      // 本地明星库已内置照片；只有匹配到库外名人时才去维基百科兜底拉图。
+      if (st.photo !== undefined) return;
       const src = '/api/zhixian/photo?name=' + encodeURIComponent(st.name);
       fetch(src)
         .then((res) => {
