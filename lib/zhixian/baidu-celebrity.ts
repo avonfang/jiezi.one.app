@@ -1,4 +1,4 @@
-import { EnvHttpProxyAgent } from 'undici';
+import { ProxyAgent } from 'undici';
 
 export type BaiduCelebrity = {
   name: string;
@@ -12,12 +12,12 @@ const CENSOR_URL =
   'https://aip.baidubce.com/rest/2.0/solution/v1/img_censor/v2/user_defined';
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
-let proxyAgent: EnvHttpProxyAgent | null = null;
+let proxyAgent: ProxyAgent | null = null;
 
-function dispatcher(): { dispatcher: EnvHttpProxyAgent } | Record<string, never> {
-  const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+function dispatcher(): { dispatcher: ProxyAgent } | Record<string, never> {
+  const proxy = process.env.BAIDU_HTTP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
   if (!proxy) return {};
-  if (!proxyAgent) proxyAgent = new EnvHttpProxyAgent();
+  if (!proxyAgent) proxyAgent = new ProxyAgent({ uri: proxy });
   return { dispatcher: proxyAgent };
 }
 
