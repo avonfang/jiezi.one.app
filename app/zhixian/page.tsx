@@ -108,6 +108,10 @@ export default function ZhixianPage() {
   const [testCost, setTestCost] = useState(1);
   const [payMode, setPayMode] = useState<'unlock' | 'test'>('unlock');
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [styleImage, setStyleImage] = useState<string | null>(null);
+  const [styleLoading, setStyleLoading] = useState(false);
+  const [styleError, setStyleError] = useState("");
+  const [styleCost, setStyleCost] = useState(3);
 
   const top1 = top3[top1Index];
 
@@ -137,6 +141,10 @@ export default function ZhixianPage() {
         if (typeof d.testCost === 'number') setTestCost(d.testCost);
         if (typeof d.balance === 'number') setBalance(d.balance);
       })
+      .catch(() => {});
+    fetch('/api/zhixian/style-image', { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.cost === 'number') setStyleCost(d.cost); })
       .catch(() => {});
   }, []);
 
@@ -290,6 +298,33 @@ export default function ZhixianPage() {
     setPendingImage(null);
     setPayOpen(false);
     if (img) runAnalysis(img);
+  }
+
+  async function generateStyle() {
+    if (!photo) { showToast('请先上传照片'); return; }
+    setStyleLoading(true);
+    setStyleError('');
+    setStyleImage(null);
+    try {
+      const res = await fetch('/api/zhixian/style-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ image: photo, starName: top1.name }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.url) {
+        setStyleImage(data.url);
+      } else if (data.code === 'INSUFFICIENT_CREDITS' || res.status === 402) {
+        setStyleError('积分不足，请先充值（' + data.cost + ' 积分）');
+        refreshBalance();
+      } else {
+        setStyleError(data.error || '生成失败，请稍后重试');
+      }
+    } catch {
+      setStyleError('生成失败，请稍后重试');
+    } finally {
+      setStyleLoading(false);
+    }
   }
 
   async function unlockAll() {
@@ -535,6 +570,21 @@ export default function ZhixianPage() {
                       <div className="text-[11px] font-bold mb-1" style={{ color: '#534AB7' }}>招牌口头禅（背下来）</div>
                       <div className="text-[15px] font-bold" style={{ color: '#26215C' }}>{top1.catch || '自带喜感'}</div>
                     </div>
+                    <button
+                      onClick={generateStyle}
+                      disabled={styleLoading || !photo}
+                      className="w-full mt-4 rounded-xl text-white font-bold text-sm py-3 disabled:opacity-60"
+                      style={{ background: 'linear-gradient(135deg,#534AB7,#3C3489)' }}
+                    >
+                      {styleLoading ? '正在生成造型图…（约 10 秒）' : `生成我的造型图（${styleCost} 积分）`}
+                    </button>
+                    {styleError && <p className="text-xs mt-2" style={{ color: '#BA7517' }}>{styleError}</p>}
+                    {styleImage && (
+                      <div className="mt-3 rounded-2xl overflow-hidden border border-[#E4E2EC]">
+                        <img src={styleImage} alt="推荐造型" className="w-full object-cover" />
+                        <div className="px-4 py-2 text-[11px] text-center" style={{ color: '#8A8798' }}>AI 风格化参考图 · 仅供娱乐，不用于身份认证</div>
+                      </div>
+                    )}
                   </>
                 )}
 
