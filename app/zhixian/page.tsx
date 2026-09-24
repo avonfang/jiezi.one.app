@@ -189,6 +189,23 @@ export default function ZhixianPage() {
     }
   }
 
+  function shareResult() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://jiezi.site';
+    const url = `${origin}/zhixian`;
+    const text = `我的明星分身是「${top1.name}」${top1.pct}%！${top1.desc}\n快来测测你像哪个明星 → ${url}`;
+    const nav = navigator as Navigator & { share?: (data: { title?: string; text?: string; url?: string }) => Promise<void> };
+    if (typeof nav.share === 'function') {
+      nav.share({ title: '测测你的明星分身', text, url }).catch(() => { /* 用户取消分享 */ });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showToast('分享文案已复制，去粘贴给朋友吧'),
+        () => showToast('复制失败，请手动分享'),
+      );
+    } else {
+      showToast('当前浏览器不支持分享，请截图分享');
+    }
+  }
+
   async function unlockAll() {
     if (!resultId) {
       showToast('请先完成分析');
@@ -383,7 +400,7 @@ export default function ZhixianPage() {
             </button>
             <div className="flex gap-2 mt-3">
               <button onClick={() => setConsentOpen(true)} className="flex-1 text-sm font-semibold rounded-xl py-3 liquid-glass" style={{ color: '#5D5A75' }}>换一张重测</button>
-              <button onClick={() => showToast(`已生成分享卡：「${city}分腾 · ${top1.name} ${top1.pct}%」（演示）`)} className="flex-1 text-sm font-semibold rounded-xl py-3 liquid-glass" style={{ color: '#5D5A75' }}>分享给朋友</button>
+              <button onClick={shareResult} className="flex-1 text-sm font-semibold rounded-xl py-3 liquid-glass" style={{ color: '#5D5A75' }}>分享给朋友</button>
             </div>
             <p className="text-[11px] leading-relaxed text-center mt-3" style={{ color: '#8A8798' }}>{isMockResult ? '演示结果随机生成，仅代表风格参考。' : '结果由云端相似度接口生成，仅代表娱乐参考。'}页面不展示明星照片，也不提供换脸 / 深度合成能力。</p>
           </div>
