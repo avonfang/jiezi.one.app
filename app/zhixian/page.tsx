@@ -49,8 +49,13 @@ function Ring({ pct }: { pct: number }) {
 }
 
 function Avatar({ star, size = 48 }: { star: Star; size?: number }) {
+  if (star.photo) {
+    return (
+      <img src={star.photo} alt={star.name} className="rounded-full object-cover shrink-0" style={{ width: size, height: size, border: "2px solid #fff" }} referrerPolicy="no-referrer" />
+    );
+  }
   return (
-    <div className="rounded-full flex items-center justify-center text-white font-bold shrink-0" style={{ width: size, height: size, background: 'linear-gradient(135deg,#534AB7,#BA7517)', fontSize: Math.round(size * 0.42) }}>
+    <div className="rounded-full flex items-center justify-center text-white font-bold shrink-0" style={{ width: size, height: size, background: "linear-gradient(135deg,#534AB7,#BA7517)", fontSize: Math.round(size * 0.42) }}>
       {star.name[0]}
     </div>
   );
@@ -163,6 +168,19 @@ export default function ZhixianPage() {
     reader.readAsDataURL(f);
   }
 
+  function loadPhotos(stars: Star[]) {
+    stars.forEach((st, idx) => {
+      const src = '/api/zhixian/photo?name=' + encodeURIComponent(st.name);
+      fetch(src)
+        .then((res) => {
+          if (res.ok) {
+            setTop3((prev) => prev.map((p, i) => (i === idx ? { ...p, photo: src } : p)));
+          }
+        })
+        .catch(() => {});
+    });
+  }
+
   async function runAnalysis(image: string | null) {
     setStage('loading');
     setSteps(0);
@@ -179,6 +197,7 @@ export default function ZhixianPage() {
     const list = apiResult?.top3?.length ? apiResult.top3 : pickTop3();
     setIsMockResult(!apiResult || apiResult.mock);
     setTop3(list);
+    loadPhotos(list);
     setTop1Index(0);
     setUnlocked([true, false, false, false]);
     setCurrentTab(0);
@@ -381,7 +400,7 @@ export default function ZhixianPage() {
               <Ring pct={top1.pct} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5">
-                  <Avatar star={top1} size={48} />
+                  <Avatar star={top1} size={72} />
                   <div className="text-xl font-extrabold" style={{ color: '#26215C' }}>{top1.name}</div>
                 </div>
                 <span className="inline-block text-xs rounded-full px-2 py-0.5 mt-1.5" style={{ background: '#FAEEDA', color: '#854F0B' }}>{top1.tag}</span>

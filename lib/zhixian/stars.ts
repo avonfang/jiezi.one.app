@@ -5,6 +5,7 @@ export type Star = {
   pct: number;
   dims: string[];
   desc: string;
+  photo?: string;
 };
 
 export const STARS: Star[] = [
