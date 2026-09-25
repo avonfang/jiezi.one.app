@@ -2,14 +2,19 @@ import { STARS, type Star } from './stars';
 import { isConfigured, searchFaces } from './tencent-face';
 import {
   isConfigured as isBaiduConfigured,
-  recognizeCelebrities,
+  recognizeCelebrities as baiduRecognize,
   type BaiduCelebrity,
 } from './baidu-celebrity';
+import {
+  isConfigured as isBosConfigured,
+  recognizeCelebrities as bosRecognize,
+  type BosCelebrity,
+} from './bos-celebrity';
 
 export type MatchResponse = {
   mock: boolean;
   top3: Star[];
-  engine?: 'baidu' | 'tencent' | 'mock';
+  engine?: 'bos' | 'baidu' | 'tencent' | 'mock';
 };
 
 const GROUP_ID = process.env.TENCENT_FACE_GROUP_ID || 'zhixian_stars_v1';
@@ -17,7 +22,6 @@ const GROUP_ID = process.env.TENCENT_FACE_GROUP_ID || 'zhixian_stars_v1';
 const TENCENT_MIN_SCORE = 75;
 
 function scoreToPct(score: number): number {
-  // 腾讯 Score 是 0-100 置信度，先粗映射为展示分，后续标定。
   return Math.max(1, Math.min(99, Math.round(score)));
 }
 
@@ -32,15 +36,20 @@ function byName(name: string): Star | undefined {
   return STARS.find((s) => n.includes(s.name) || s.name.includes(n));
 }
 
-function baiduToStars(celebrities: BaiduCelebrity[]): Star[] {
+// BOS / 百度公众人物识别结果 -> 本地明星库映射，未收录的明星用临时条目兜底。
+function celebritiesToStars(
+  celebrities: Array<{ name: string; starId?: string; probability: number }>,
+): Star[] {
   const out: Star[] = [];
   for (const c of celebrities) {
     const local = byName(c.name);
     if (local) {
-      if (!out.some((s) => s.id === local.id)) out.push({ ...local, pct: probabilityToPct(c.probability) });
+      if (!out.some((s) => s.id === local.id)) {
+        out.push({ ...local, pct: probabilityToPct(c.probability) });
+      }
     } else {
       out.push({
-        id: 'bd_' + (c.starId || encodeURIComponent(c.name)),
+        id: 'ext_' + (c.starId || encodeURIComponent(c.name)),
         name: c.name,
         tag: '云端明星识别',
         pct: probabilityToPct(c.probability),
@@ -52,11 +61,23 @@ function baiduToStars(celebrities: BaiduCelebrity[]): Star[] {
   return out.slice(0, 3);
 }
 
+async function tryBos(imageBase64: string): Promise<MatchResponse | null> {
+  if (!isBosConfigured()) return null;
+  try {
+    const celebrities = await bosRecognize(imageBase64);
+    const top3 = celebritiesToStars(celebrities);
+    if (top3.length) return { mock: false, top3, engine: 'bos' };
+  } catch (e) {
+    console.error('bos celebrity error:', e);
+  }
+  return null;
+}
+
 async function tryBaidu(imageBase64: string): Promise<MatchResponse | null> {
   if (!isBaiduConfigured()) return null;
   try {
-    const celebrities = await recognizeCelebrities(imageBase64);
-    const top3 = baiduToStars(celebrities);
+    const celebrities = await baiduRecognize(imageBase64);
+    const top3 = celebritiesToStars(celebrities as BaiduCelebrity[]);
     if (top3.length) return { mock: false, top3, engine: 'baidu' };
   } catch (e) {
     console.error('baidu celebrity error:', e);
@@ -71,7 +92,6 @@ async function tryTencent(imageBase64: string): Promise<MatchResponse | null> {
     const byId = new Map(STARS.map((s) => [s.id, s]));
     const top3: Star[] = [];
     for (const c of candidates) {
-      // 腾讯人员库目前只有极少量明星，低于阈值的结果没有参考价值，直接丢弃。
       if (c.score < TENCENT_MIN_SCORE) continue;
       const star = byId.get(c.personId);
       if (star) top3.push({ ...star, pct: scoreToPct(c.score) });
@@ -85,15 +105,19 @@ async function tryTencent(imageBase64: string): Promise<MatchResponse | null> {
 }
 
 export async function matchTop3(imageBase64: string): Promise<MatchResponse> {
-  // 1) 百度公众人物识别（内置明星库，优先）
+  // 1) BOS 公众人物识别（方案A：任何脸都返回最相似明星 + 相似度，最准）
+  const bos = await tryBos(imageBase64);
+  if (bos) return bos;
+
+  // 2) 百度内容审核公众人物识别（旧引擎，仅明显像明星时才返回，作备选）
   const baidu = await tryBaidu(imageBase64);
   if (baidu) return baidu;
 
-  // 2) 腾讯云人脸搜索（自有人员库）
+  // 3) 腾讯云人脸搜索（自有人员库，当前仅少量明星）
   const tencent = await tryTencent(imageBase64);
   if (tencent) return tencent;
 
-  // 3) 兜底演示数据
+  // 4) 兜底演示数据
   return mockTop3();
 }
 
