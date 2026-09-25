@@ -95,6 +95,20 @@ interface RegisteredUser {
   createdAt: number;
 }
 
+interface ZhixianStats {
+  totalVisits: number;
+  todayVisits: number;
+  totalUv: number;
+  todayUv: number;
+  totalMatches: number;
+  todayMatches: number;
+  freeMatches: number;
+  paidMatches: number;
+  totalUnlocks: number;
+  todayUnlocks: number;
+  days: { date: string; visits: number; matches: number; unlocks: number }[];
+}
+
 interface Stats {
   totalVisits: number;
   todayVisits: number;
@@ -102,6 +116,7 @@ interface Stats {
   todayUv: number;
   registeredUsers: number;
   days: { date: string; visits: number }[];
+  zhixian: ZhixianStats;
 }
 
 const PLAN_NAMES: Record<string, string> = {
@@ -530,6 +545,58 @@ export default function AdminPage() {
                 <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.registeredUsers ?? 0}</div>
               </div>
             </div>
+            {/* ====== 仙人指路专属 ====== */}
+            <div className="rounded-xl p-5 mb-4" style={{background:'rgba(83,74,183,0.06)', backdropFilter:'blur(28px)', border:'1px solid rgba(83,74,183,0.18)'}}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-900">🧭 仙人指路专属</h2>
+                <span className="text-[11px] text-gray-400">转化率 = 付费匹配 + 解锁 / 页面访问</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  ['页面访问', stats?.zhixian?.totalVisits ?? 0],
+                  ['今日访问', stats?.zhixian?.todayVisits ?? 0],
+                  ['匹配次数', stats?.zhixian?.totalMatches ?? 0],
+                  ['今日匹配', stats?.zhixian?.todayMatches ?? 0],
+                  ['免费匹配', stats?.zhixian?.freeMatches ?? 0],
+                  ['付费匹配', stats?.zhixian?.paidMatches ?? 0],
+                  ['解锁次数', stats?.zhixian?.totalUnlocks ?? 0],
+                  ['今日解锁', stats?.zhixian?.todayUnlocks ?? 0],
+                  ['付费转化率', (() => { const v = stats?.zhixian?.totalVisits || 0; const p = (stats?.zhixian?.paidMatches || 0) + (stats?.zhixian?.totalUnlocks || 0); return v ? ((p / v) * 100).toFixed(1) + '%' : '0%'; })()],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="rounded-xl p-4" style={{background:'rgba(255,255,255,0.5)', border:'1px solid rgba(255,255,255,0.6)'}}>
+                    <div className="text-xs text-gray-500">{label}</div>
+                    <div className="text-xl font-bold text-gray-900 mt-1">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ====== 仙人指路近7天趋势 ====== */}
+            <div className="rounded-xl p-5 mb-4" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px)', border:'1px solid rgba(255,255,255,0.45)'}}>
+              <h2 className="font-semibold text-gray-900 mb-4">仙人指路 · 近 7 天（访问 / 匹配 / 解锁）</h2>
+              <div className="flex items-end gap-2 h-36">
+                {(stats?.zhixian?.days || []).map((d) => {
+                  const max = Math.max(1, ...(stats?.zhixian?.days || []).map((x) => Math.max(x.visits, x.matches, x.unlocks)));
+                  return (
+                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-gray-500">{d.matches}</span>
+                      <div className="flex items-end gap-1 w-full">
+                        <div className="flex-1 rounded-t" style={{ height: Math.max(3, Math.round((d.visits / max) * 100)), background: '#4f8bff' }} title={'访问 ' + d.visits} />
+                        <div className="flex-1 rounded-t" style={{ height: Math.max(3, Math.round((d.matches / max) * 100)), background: '#534AB7' }} title={'匹配 ' + d.matches} />
+                        <div className="flex-1 rounded-t" style={{ height: Math.max(3, Math.round((d.unlocks / max) * 100)), background: '#BA7517' }} title={'解锁 ' + d.unlocks} />
+                      </div>
+                      <span className="text-[10px] text-gray-400">{d.date}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-4 mt-3 text-[11px] text-gray-500">
+                <span><i className="inline-block w-2 h-2 rounded-full mr-1" style={{background:'#4f8bff'}} />访问</span>
+                <span><i className="inline-block w-2 h-2 rounded-full mr-1" style={{background:'#534AB7'}} />匹配</span>
+                <span><i className="inline-block w-2 h-2 rounded-full mr-1" style={{background:'#BA7517'}} />解锁</span>
+              </div>
+            </div>
+
             <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-900">近 7 天访问趋势</h2>
@@ -551,3 +618,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

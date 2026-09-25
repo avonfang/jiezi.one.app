@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { initCredits, spendCreditsOnce } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
+import { trackUnlock } from '@/lib/zhixian/stats';
 
 const DEFAULT_UNLOCK_COST = 6;
 
@@ -55,6 +56,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await trackUnlock();
+
     return Response.json({
       success: true,
       balance,
@@ -73,3 +76,4 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return Response.json({ success: true, cost: parseCost() });
 }
+

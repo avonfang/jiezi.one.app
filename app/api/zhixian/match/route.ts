@@ -3,6 +3,7 @@ import { matchTop3 } from '@/lib/zhixian/matcher';
 import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
 import { consumeFreeTest, FREE_TEST_LIMIT, TEST_COST } from '@/lib/zhixian/quota';
+import { trackMatch } from '@/lib/zhixian/stats';
 
 // base64 图片大小上限（约 4MB），超出直接拒绝，保护函数实例。
 const MAX_IMAGE_CHARS = 5_500_000;
@@ -58,9 +59,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { mock, top3, engine } = await matchTop3(image);
+    await trackMatch(quota.paid);
     return Response.json({ success: true, mock, top3, engine, quota });
   } catch (error) {
     console.error('zhixian match error:', error);
     return Response.json({ success: false, error: '匹配失败，请稍后重试' }, { status: 500 });
   }
 }
+

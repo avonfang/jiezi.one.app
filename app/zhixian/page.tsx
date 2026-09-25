@@ -148,6 +148,17 @@ export default function ZhixianPage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    // 仙人指路页面访问埋点：每次新会话上报一次
+    let counted = false;
+    try {
+      counted = sessionStorage.getItem('__zxv') === '1';
+      if (!counted) sessionStorage.setItem('__zxv', '1');
+    } catch { /* ignore */ }
+    if (counted) return;
+    fetch('/api/zhixian/track', { method: 'POST', headers: getAuthHeaders() }).catch(() => {});
+  }, []);
+
   function pickTop3(): Star[] {
     const start = Math.floor(Math.random() * STARS.length);
     const base = [87, 74, 61];
