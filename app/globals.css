@@ -1,19 +1,56 @@
 @import 'tailwindcss';
 
-/* ========== Design Tokens ========== */
+@theme {
+  /* 中性色：对齐百炼 demo 的 #14151C 母色 + 透明度阶梯 + 边框 */
+  --color-gray-50: #FAFAFC;
+  --color-gray-100: #F2F2F4;
+  --color-gray-200: #E9E9ED;
+  --color-gray-300: #D6D7DC;
+  --color-gray-400: rgba(20,21,28,0.40);
+  --color-gray-500: rgba(20,21,28,0.60);
+  --color-gray-600: rgba(20,21,28,0.75);
+  --color-gray-700: rgba(20,21,28,0.85);
+  --color-gray-800: #14151C;
+  --color-gray-900: #14151C;
+  /* 主蓝：对齐 #2564F8 */
+  --color-blue-50: #F0F7FF;
+  --color-blue-100: #E3EDFF;
+  --color-blue-200: #C7DBFF;
+  --color-blue-300: #9CC0FF;
+  --color-blue-400: #6CA0FF;
+  --color-blue-500: #2564F8;
+  --color-blue-600: #2564F8;
+  --color-blue-700: #1D4FD6;
+  --color-blue-800: #1A42AC;
+  --color-blue-900: #17368D;
+  /* 点缀色 */
+  --color-teal-50: rgba(20,184,166,0.08);
+  --color-teal-600: #14B8A6;
+  --color-violet-50: rgba(97,92,237,0.08);
+  --color-violet-600: #615CED;
+  --color-orange-50: rgba(250,129,37,0.08);
+  --color-orange-600: #FA8125;
+}
+
+
+/* ========== Design Tokens（百炼控制台风格） ========== */
 :root {
-  --bg-gradient: #EBF3FF;
-  --accent-blue: #4F8BFF;
-  --accent-violet: #7C6CF0;
-  --text-primary: #1C1C1E;
-  --text-secondary: rgba(0,0,0,0.45);
-  --text-tertiary: rgba(0,0,0,0.25);
-  --success: #34C759;
-  --warning: #FF9F0A;
-  --error: #FF453A;
-  --glass-border: rgba(255,255,255,0.45);
-  --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.45), rgba(255,255,255,0.18));
-  --glass-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03);
+  --bg-gradient: #F2F2F4;
+  --accent-blue: #2564F8;
+  --accent-violet: #615CED;
+  --dark-cta: #06111A;
+  --text-primary: #14151C;
+  --text-secondary: rgba(20,21,28,0.60);
+  --text-tertiary: rgba(20,21,28,0.40);
+  --success: #52C41A;
+  --warning: #FAAD14;
+  --error: #FF4D4F;
+  --card-bg: #FFFFFF;
+  --card-border: #E9E9ED;
+  --card-border-strong: #D6D7DC;
+  --glass-border: #E9E9ED;
+  --glass-bg: #FFFFFF;
+  --glass-shadow: 0 1px 2px rgba(0,0,0,.03), 0 8px 30px rgba(0,0,0,.04);
 }
 
 html {
@@ -26,18 +63,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ========== Liquid Glass ========== */
+/* ========== 卡片（扁平白卡，去玻璃拟态） ========== */
 .liquid-glass {
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
-  backdrop-filter: blur(28px) saturate(160%) contrast(1.02);
-  -webkit-backdrop-filter: blur(28px) saturate(160%) contrast(1.02);
   box-shadow: var(--glass-shadow);
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
 /* :where() = zero specificity — Tailwind utilities like .fixed / .sticky always win */
-/* position:relative is in @layer base so Tailwind's .fixed (@layer utilities) overrides it */
 :where(.liquid-glass) {
   overflow: hidden;
   isolation: isolate;
@@ -49,35 +83,6 @@ body {
   }
 }
 
-.liquid-glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(255,255,255,0.6), transparent 40%),
-    linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(255,255,255,0.08) 100%);
-  pointer-events: none;
-}
-
-.liquid-glass::after {
-  content: '';
-  position: absolute;
-  inset: 1.5px;
-  border-radius: inherit;
-  border: 1px solid rgba(255,255,255,0.2);
-  pointer-events: none;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass {
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
 /* ========== Glass Variants ========== */
 .glass-card {
   border-radius: 16px;
@@ -86,24 +91,19 @@ body {
 .glass-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,0.6),
-    inset 0 -1px 0 rgba(255,255,255,0.15),
-    0 12px 48px rgba(79,139,255,0.10),
-    0 4px 12px rgba(0,0,0,0.04);
+    0 12px 40px rgba(0,0,0,.07),
+    0 4px 12px rgba(0,0,0,.04);
 }
 .glass-sm { border-radius: 10px; padding: 16px 20px; }
 .glass-lg { border-radius: 20px; padding: 32px; }
 
-/* ========== Gradient Utilities ========== */
+/* ========== Gradient Utilities（百炼：主色纯蓝，去渐变） ========== */
 .gradient-primary {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+  background: var(--accent-blue);
   color: white;
 }
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-blue);
 }
 
 /* ========== Ambient Background Orbs ========== */
@@ -115,7 +115,7 @@ body {
   filter: blur(80px);
 }
 
-/* ========== Ambient Background (for pages that want it) ========== */
+/* ========== Ambient Background ========== */
 .bg-ambient {
   position: relative;
 }
@@ -125,51 +125,47 @@ body {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse 70% 50% at 0% 0%, rgba(79,139,255,0.06), transparent),
-    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(124,108,240,0.05), transparent),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(79,139,255,0.04), transparent);
+    radial-gradient(ellipse 70% 50% at 0% 0%, rgba(37,100,248,0.04), transparent),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(97,92,237,0.03), transparent);
   pointer-events: none;
 }
 
 /* ========== Card Shadows ========== */
 .card-shadow {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 2px 8px rgba(0,0,0,.04);
 }
 .card-shadow-hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
 }
 .card-shadow-lg {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 30px rgba(0,0,0,.06), 0 4px 8px rgba(0,0,0,.04);
 }
 
-/* ========== Glass (light backdrop) ========== */
+/* ========== Glass (light backdrop) → 白底 ========== */
 .glass-light {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #FFFFFF;
 }
 
-/* ========== Badge Colors ========== */
+/* ========== Badge Colors（百炼） ========== */
 .badge-accent {
-  background: rgba(79,139,255,0.08);
-  backdrop-filter: blur(8px);
+  background: rgba(37,100,248,0.08);
   color: var(--accent-blue);
-  border: 1px solid rgba(79,139,255,0.1);
+  border: 1px solid rgba(37,100,248,0.12);
 }
 .badge-success {
-  background: rgba(52,199,89,0.08);
+  background: rgba(82,196,26,0.08);
   color: var(--success);
-  border: 1px solid rgba(52,199,89,0.1);
+  border: 1px solid rgba(82,196,26,0.12);
 }
 .badge-warning {
-  background: rgba(255,159,10,0.08);
+  background: rgba(250,173,20,0.10);
   color: var(--warning);
-  border: 1px solid rgba(255,159,10,0.1);
+  border: 1px solid rgba(250,173,20,0.15);
 }
 .badge-error {
-  background: rgba(255,69,58,0.08);
+  background: rgba(255,77,79,0.08);
   color: var(--error);
-  border: 1px solid rgba(255,69,58,0.1);
+  border: 1px solid rgba(255,77,79,0.12);
 }
 
 /* ========== Animations ========== */

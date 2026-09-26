@@ -618,13 +618,13 @@ export default function ZhixianPage() {
                       className="w-full mt-4 rounded-xl text-white font-bold text-sm py-3 disabled:opacity-60"
                       style={{ background: 'linear-gradient(135deg,#534AB7,#3C3489)' }}
                     >
-                      {styleLoading ? '正在生成造型图…（约 10 秒）' : `生成我的造型图（${styleCost} 积分）`}
+                      {styleLoading ? '正在换脸到经典造型…' : `生成我的换脸造型图（${styleCost} 积分）`}
                     </button>
                     {styleError && <p className="text-xs mt-2" style={{ color: '#BA7517' }}>{styleError}</p>}
                     {styleImage && (
                       <div className="mt-3 rounded-2xl overflow-hidden border border-[#E4E2EC]">
                         <img src={styleImage} alt="推荐造型" className="w-full object-cover" />
-                        <div className="px-4 py-2 text-[11px] text-center" style={{ color: '#8A8798' }}>AI 风格化参考图 · 仅供娱乐，不用于身份认证</div>
+                        <div className="px-4 py-2 text-[11px] text-center" style={{ color: '#8A8798' }}>AI 换脸合成图 · 已加显著标识 · 仅供娱乐，不用于身份认证</div>
                       </div>
                     )}
                   </>
@@ -772,3 +772,4 @@ export default function ZhixianPage() {
     </main>
   );
 }
+
