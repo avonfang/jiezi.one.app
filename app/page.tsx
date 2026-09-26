@@ -455,6 +455,9 @@ export default function Home() {
               </button>
             )}
             <div className="relative group"><button className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1" style={{background:"rgba(37,100,248,0.08)", color:"#2564F8", border:"1px solid rgba(37,100,248,0.15)"}}>案例库<svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg></button><div className="absolute right-0 top-full mt-2 w-56 hidden group-hover:block rounded-xl bg-white border border-[#E9E9ED] shadow-lg overflow-hidden z-50"><div className="px-4 pt-3 pb-1 text-[11px] text-gray-400">精选案例</div><a href="/zhixian" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"><span className="text-lg">🧭</span><span>仙人指路<small className="block text-[11px] text-gray-400">喜剧明星相似度测试</small></span></a><a href="/app" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"><span className="text-lg">💡</span><span>想法验证<small className="block text-[11px] text-gray-400">一句话判断值不值得做</small></span></a></div></div>
+            <a href="/learn" className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:'rgba(37,100,248,0.08)', color:'#2564F8', border:'1px solid rgba(37,100,248,0.15)'}}>
+              AI 教程
+            </a>
             <CreditBadge />
             <a href="/app/history" className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{background:'rgba(37,100,248,0.08)', color:'#2564F8', border:'1px solid rgba(37,100,248,0.15)'}}>
               我的
