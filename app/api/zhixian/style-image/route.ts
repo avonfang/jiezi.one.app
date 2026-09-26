@@ -16,11 +16,24 @@ function parseCost(): number {
   return Math.min(v, 100);
 }
 
+// 生图提示词与前端「造型方向」页签保持一致：发型/眉形眼妆/服装色系/表情/标志动作。
 function buildPrompt(name: string): string {
   const star = STARS.find((s) => s.name === name);
   if (!star) return '自然写实的喜剧明星同款造型，保持人物面部五官不变。';
-  const dims = (star.dims || []).join('、');
-  return '参考中国喜剧明星' + star.name + '的经典造型（' + star.tag + '），给照片中的人换一个同款发型、眉形和服装，调整神态气质，突出' + dims + '。保持人物面部五官和身份不变，自然写实、生活化，喜剧明星同款气质。';
+  const d0 = star.dims?.[0] || '脸型轮廓';
+  const d1 = star.dims?.[1] || '眼型弧度';
+  const d2 = star.dims?.[2] || '神态';
+  const catchphrase = star.catch || '';
+  return (
+    '参考中国喜剧明星「' + star.name + '」的经典造型（' + star.tag + '），给照片中的人做同款妆造，保持面部五官和身份不变。' +
+    '发型：做「' + d0 + '」的轮廓感，用发蜡或假发片修饰轮廓，先别大改。' +
+    '眉形眼妆：重点突出「' + d1 + '」，这是"一眼像"的关键。' +
+    '服装色系：选深色或大地色，避免高饱和潮牌，突出家常感。' +
+    '表情神态：做"不使劲"的松弛感，突出「' + d2 + '」的神韵。' +
+    '标志动作：可加抿嘴、挑眉或摊手的小动作。' +
+    (catchphrase ? '气质参考口头禅：' + catchphrase + '。' : '') +
+    '自然写实、生活化。'
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -36,8 +49,13 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: '图片格式不支持' }, { status: 400 });
     }
     const sz = parseImageSize(image);
-    if (sz && (sz.width < 512 || sz.height < 512)) {
-      return Response.json({ success: false, error: '图片尺寸太小（需至少 512×512），请换一张更清晰的照片' }, { status: 400 });
+    if (sz) {
+      if (sz.width < 512 || sz.height < 512) {
+        return Response.json({ success: false, error: '图片尺寸太小（需至少 512×512），请换一张更清晰的照片' }, { status: 400 });
+      }
+      if (sz.width > 4096 || sz.height > 4096) {
+        return Response.json({ success: false, error: '图片尺寸过大（请用 4096px 以内的照片）' }, { status: 400 });
+      }
     }
     if (image.length > MAX_IMAGE_CHARS) {
       return Response.json({ success: false, error: '图片过大，请压缩后重试' }, { status: 413 });
@@ -69,5 +87,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return Response.json({ success: true, cost: parseCost(), configured: isConfigured() });
 }
+
+
 
 
