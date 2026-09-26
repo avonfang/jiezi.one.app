@@ -5,6 +5,8 @@ import { isConfigured, generateStyleImage } from '@/lib/zhixian/dashscope';
 import { STARS } from '@/lib/zhixian/stars';
 import { parseImageSize } from '@/lib/zhixian/image-size';
 
+export const maxDuration = 60; // DashScope 异步生成较慢，放宽函数超时
+
 const DEFAULT_COST = 3;
 const MAX_IMAGE_CHARS = 5_500_000;
 
@@ -59,10 +61,13 @@ export async function POST(request: NextRequest) {
     return Response.json({ success: true, url, cost });
   } catch (error) {
     console.error('zhixian style-image error:', error);
-    return Response.json({ success: false, error: '造型图生成失败，请稍后重试' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : '';
+    return Response.json({ success: false, error: msg || '造型图生成失败，请稍后重试' }, { status: 500 });
   }
 }
 
 export async function GET() {
   return Response.json({ success: true, cost: parseCost(), configured: isConfigured() });
 }
+
+
