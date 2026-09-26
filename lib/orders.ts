@@ -1,5 +1,6 @@
 import { kvGet, kvSet } from './kv-store';
 import { addCredits } from './credits';
+import { trackRecharge, priceToCents } from './revenue';
 import { generateShortId } from './id-gen';
 
 const IDS_KEY = 'orders:ids';
@@ -61,5 +62,8 @@ export async function confirmOrder(orderId: string, xorpayAoid?: string): Promis
   if (xorpayAoid) order.xorpay_aoid = xorpayAoid;
   await kvSet(orderKey(orderId), order);
   await addCredits(order.userId, order.credits);
+  await trackRecharge(priceToCents(order.price), order.credits);
   return true;
 }
+
+

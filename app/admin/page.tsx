@@ -117,6 +117,7 @@ interface Stats {
   registeredUsers: number;
   days: { date: string; visits: number }[];
   zhixian: ZhixianStats;
+  revenue: { orders: number; cents: number; credits: number };
 }
 
 const PLAN_NAMES: Record<string, string> = {
@@ -543,6 +544,18 @@ export default function AdminPage() {
               <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
                 <div className="text-xs text-gray-500">注册用户数</div>
                 <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.registeredUsers ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(83,74,183,0.08)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(83,74,183,0.2)'}}>
+                <div className="text-xs text-gray-500">充值订单</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.revenue?.orders ?? 0}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(83,74,183,0.08)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(83,74,183,0.2)'}}>
+                <div className="text-xs text-gray-500">充值金额</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">¥{(((stats?.revenue?.cents ?? 0) / 100)).toFixed(2)}</div>
+              </div>
+              <div className="rounded-xl p-5" style={{background:'rgba(83,74,183,0.08)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(83,74,183,0.2)'}}>
+                <div className="text-xs text-gray-500">充值积分</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.revenue?.credits ?? 0}</div>
               </div>
             </div>
             {/* ====== 仙人指路专属 ====== */}

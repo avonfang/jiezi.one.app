@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
     const zxPaidMatches = (await kvGet<number>('zx:match:paid:total')) ?? 0;
     const zxTotalUnlocks = (await kvGet<number>('zx:unlock:total')) ?? 0;
     const zxTodayUnlocks = (await kvGet<number>('zx:unlock:' + today)) ?? 0;
+    const revenueOrders = (await kvGet<number>('revenue:orders:total')) ?? 0;
+    const revenueCents = (await kvGet<number>('revenue:amount:total')) ?? 0;
+    const revenueCredits = (await kvGet<number>('revenue:credits:total')) ?? 0;
 
     const zxDays = [];
     for (let i = 6; i >= 0; i--) {
@@ -64,6 +67,11 @@ export async function GET(request: NextRequest) {
       todayUv,
       registeredUsers,
       days,
+      revenue: {
+        orders: revenueOrders,
+        cents: revenueCents,
+        credits: revenueCredits,
+      },
       zhixian: {
         totalVisits: zxTotalVisits,
         todayVisits: zxTodayVisits,
