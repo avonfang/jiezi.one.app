@@ -170,6 +170,30 @@ export default function ZhixianPage() {
     return list;
   }
 
+  // 图片尺寸兜底：通义万相要求 512~4096px，若短边不足 512 则等比放大，避免生成失败。
+  function normalizeImage(dataUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        const min = Math.min(w, h);
+        if (min >= 512) { resolve(dataUrl); return; }
+        const scale = 512 / min;
+        const nw = Math.round(w * scale);
+        const nh = Math.round(h * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = nw;
+        canvas.height = nh;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(dataUrl); return; }
+        ctx.drawImage(img, 0, 0, nw, nh);
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
@@ -193,16 +217,18 @@ export default function ZhixianPage() {
     const reader = new FileReader();
     reader.onload = () => {
       const img = reader.result as string;
-      setPhoto(img);
-      if (freeRemaining <= 0) {
-        setPendingImage(img);
-        setPayMode('test');
-        setNeedRecharge(false);
-        setPayOpen(true);
-        refreshBalance();
-        return;
-      }
-      runAnalysis(img);
+      normalizeImage(img).then((normalized) => {
+        setPhoto(normalized);
+        if (freeRemaining <= 0) {
+          setPendingImage(normalized);
+          setPayMode('test');
+          setNeedRecharge(false);
+          setPayOpen(true);
+          refreshBalance();
+          return;
+        }
+        runAnalysis(normalized);
+      });
     };
     reader.onerror = () => showToast('读取照片失败');
     reader.readAsDataURL(f);
