@@ -3,6 +3,7 @@ import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
 import { isConfigured, generateStyleImage } from '@/lib/zhixian/dashscope';
 import { STARS } from '@/lib/zhixian/stars';
+import { parseImageSize } from '@/lib/zhixian/image-size';
 
 const DEFAULT_COST = 3;
 const MAX_IMAGE_CHARS = 5_500_000;
@@ -31,6 +32,10 @@ export async function POST(request: NextRequest) {
     }
     if (!/^data:image\/(jpe?g|png|webp);base64,/i.test(image)) {
       return Response.json({ success: false, error: '图片格式不支持' }, { status: 400 });
+    }
+    const sz = parseImageSize(image);
+    if (sz && (sz.width < 512 || sz.height < 512)) {
+      return Response.json({ success: false, error: '图片尺寸太小（需至少 512×512），请换一张更清晰的照片' }, { status: 400 });
     }
     if (image.length > MAX_IMAGE_CHARS) {
       return Response.json({ success: false, error: '图片过大，请压缩后重试' }, { status: 413 });

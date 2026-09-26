@@ -177,9 +177,14 @@ export default function ZhixianPage() {
       img.onload = () => {
         const w = img.naturalWidth || img.width;
         const h = img.naturalHeight || img.height;
+        if (!w || !h) { resolve(dataUrl); return; }
+        let scale = 1;
         const min = Math.min(w, h);
-        if (min >= 512) { resolve(dataUrl); return; }
-        const scale = 512 / min;
+        const max = Math.max(w, h);
+        // 通义万相要求 512~4096px：太小放大，太大缩小，统一到安全区间。
+        if (min < 512) scale = 512 / min;
+        if (max > 2048) scale = Math.min(scale, 2048 / max);
+        if (scale === 1) { resolve(dataUrl); return; }
         const nw = Math.round(w * scale);
         const nh = Math.round(h * scale);
         const canvas = document.createElement('canvas');
@@ -188,7 +193,7 @@ export default function ZhixianPage() {
         const ctx = canvas.getContext('2d');
         if (!ctx) { resolve(dataUrl); return; }
         ctx.drawImage(img, 0, 0, nw, nh);
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
       };
       img.onerror = () => resolve(dataUrl);
       img.src = dataUrl;
