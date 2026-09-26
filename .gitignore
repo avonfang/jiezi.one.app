@@ -64,3 +64,4 @@ skills-lock.json
 # zhixian local test library (celebrity face images - never commit)
 .zhixian-library/
 
+.next-build/
