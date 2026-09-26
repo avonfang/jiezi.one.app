@@ -16,6 +16,13 @@ function key(): string {
   return process.env.DASHSCOPE_API_KEY || '';
 }
 
+// 编辑强度 0~1，值越小越接近原图（人脸/五官保持得越好）。
+function strength(): number {
+  const v = parseFloat(process.env.ZHIXIAN_STYLE_STRENGTH || '0.35');
+  if (!Number.isFinite(v) || v < 0 || v > 1) return 0.35;
+  return v;
+}
+
 export function isConfigured(): boolean {
   return !!key();
 }
@@ -35,7 +42,7 @@ async function createTask(imageBase64: string, prompt: string): Promise<string> 
         prompt,
         base_image_url: imageBase64,
       },
-      parameters: { n: 1 },
+      parameters: { n: 1, strength: strength() },
     }),
     ...dispatcher(),
   });
