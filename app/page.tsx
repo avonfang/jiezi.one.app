@@ -436,7 +436,7 @@ export default function Home() {
     <main className="flex-1 flex flex-col">
       {/* Header */}
       <header className="border-b border-[#E9E9ED] bg-white">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 min-h-16 py-2 flex flex-wrap items-center justify-between gap-y-2">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-bold text-gray-900 tracking-tight">芥子</span>
@@ -446,7 +446,7 @@ export default function Home() {
               从想法到产品原型，只需一分钟
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             {userName ? (
               <span className="text-xs text-gray-400 hidden sm:inline">{userName}</span>
             ) : (
@@ -529,7 +529,7 @@ export default function Home() {
                   {!userName && (
                     <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full" style={{background:'rgba(37,100,248,0.06)', border:'1px solid rgba(37,100,248,0.1)'}}>
                       <span className="w-1.5 h-1.5 rounded-full bg-[#2564F8]" />
-                      <span className="text-xs" style={{color:'#2564F8'}}>需要登录才能使用 · 首次注册送 <strong>30 积分</strong></span>
+                      <span className="text-xs" style={{color:'#2564F8'}}>可先体验 · 首次注册送 <strong>50 积分</strong></span>
                     </div>
                   )}
                 </div>

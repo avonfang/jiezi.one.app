@@ -5,6 +5,7 @@ import { spendCredit, initCredits } from '@/lib/credits';
 import { saveValidation } from '@/lib/recent-validations';
 import type { ValidationReport } from '@/lib/types';
 import { getUserIdFromRequest } from '@/lib/get-user';
+import { limitCostlyRequest } from '@/lib/rate-limit';
 
 const encoder = new TextEncoder();
 
@@ -27,8 +28,10 @@ function errorEvent(message: string) {
 export async function POST(request: NextRequest) {
   const clientId = getUserIdFromRequest(request);
   if (!clientId) {
-    return Response.json({ error: '缺少客户端标识' }, { status: 400 });
+    return Response.json({ error: '请先登录或刷新页面' }, { status: 401 });
   }
+  const limited = await limitCostlyRequest(request, 'validate', clientId, 20);
+  if (limited) return limited;
 
   await initCredits(clientId);
   const deducted = await spendCredit(clientId);

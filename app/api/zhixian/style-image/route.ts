@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
+import { limitCostlyRequest } from '@/lib/rate-limit';
 import { isConfigured as isFusionConfigured, isConfiguredForStar, fuseFace } from '@/lib/zhixian/facefusion';
 import { isConfigured as isDashscopeConfigured, generateStyleImage } from '@/lib/zhixian/dashscope';
 import { STARS } from '@/lib/zhixian/stars';
@@ -35,6 +36,10 @@ function buildPrompt(name: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = getUserIdFromRequest(request);
+    if (!userId) return Response.json({ success: false, error: '请先登录或刷新页面' }, { status: 401 });
+    const limited = await limitCostlyRequest(request, 'zhixian-style-image', userId, 6);
+    if (limited) return limited;
     const body = await request.json().catch(() => ({}));
     const image = (body?.image as string) || '';
     const starName = (body?.starName as string) || '';
@@ -72,28 +77,22 @@ export async function POST(request: NextRequest) {
       if (!/^data:image\/(jpe?g|png);base64,/i.test(image)) {
         return Response.json({ success: false, error: '换脸仅支持 JPG/PNG 照片，请重新上传' }, { status: 400 });
       }
-      const userId = getUserIdFromRequest(request);
       const cost = parseCost();
-      if (userId) {
-        await initCredits(userId);
-        const ok = await spendCredits(userId, cost);
-        if (!ok) {
-          return Response.json({ success: false, code: 'INSUFFICIENT_CREDITS', error: '积分不足，请充值', cost }, { status: 402 });
-        }
+      await initCredits(userId);
+      const ok = await spendCredits(userId, cost);
+      if (!ok) {
+        return Response.json({ success: false, code: 'INSUFFICIENT_CREDITS', error: '积分不足，请充值', cost }, { status: 402 });
       }
       const url = await fuseFace(image, starId);
       return Response.json({ success: true, url, cost, mode: 'facefusion' });
     }
 
     // DashScope 兜底：改妆模式
-    const userId = getUserIdFromRequest(request);
     const cost = parseCost();
-    if (userId) {
-      await initCredits(userId);
-      const ok = await spendCredits(userId, cost);
-      if (!ok) {
-        return Response.json({ success: false, code: 'INSUFFICIENT_CREDITS', error: '积分不足，请充值', cost }, { status: 402 });
-      }
+    await initCredits(userId);
+    const ok = await spendCredits(userId, cost);
+    if (!ok) {
+      return Response.json({ success: false, code: 'INSUFFICIENT_CREDITS', error: '积分不足，请充值', cost }, { status: 402 });
     }
     const prompt = buildPrompt(starName);
     const url = await generateStyleImage(image, prompt);

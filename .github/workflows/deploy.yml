@@ -24,6 +24,13 @@ jobs:
       - name: Pull Vercel environment
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Check required production secrets
+        run: |
+          if ! grep -q '^AUTH_TOKEN_SECRET=' .vercel/.env.production.local; then
+            echo 'AUTH_TOKEN_SECRET must be configured in the Vercel production environment.'
+            exit 1
+          fi
+
       - name: Build project
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 

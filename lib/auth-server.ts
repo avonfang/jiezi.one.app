@@ -155,8 +155,7 @@ function tryParse(s: string): any {
 }
 
 export async function registerOrLoginByOpenid(
-  openid: string,
-  anonymousId?: string
+  openid: string
 ): Promise<{ userId: string; isNew: boolean }> {
   const mapKey = OPENID_PREFIX + openid;
   let userId = await kvGet<string>(mapKey);
@@ -176,19 +175,6 @@ export async function registerOrLoginByOpenid(
     type: 'wechat',
   });
   await initCredits(userId);
-
-  // Merge anonymous credits if provided
-  if (anonymousId) {
-    try {
-      const anonKey = `credits:${anonymousId}`;
-      const anonData = await kvGet<{ balance: number }>(anonKey);
-      if (anonData && anonData.balance > 0) {
-        const { kvAddCredits } = await import('./kv-store');
-        await kvAddCredits(userId, anonData.balance);
-        await kvSet(anonKey, { balance: 0, total_purchased: 0, created_at: Date.now() });
-      }
-    } catch { /* merge best-effort */ }
-  }
 
   return { userId, isNew: true };
 }

@@ -124,7 +124,7 @@ export default function PricingPage() {
     try {
       const res = await fetch('/api/xorpay/pay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ plan: pid, userId: getClientId(), payType: 'native' }),
       });
       const data = await res.json();

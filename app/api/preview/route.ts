@@ -1,9 +1,15 @@
 import { NextRequest } from 'next/server';
 import { generateShortId } from '@/lib/id-gen';
 import { kvSet } from '@/lib/kv-store';
+import { getUserIdFromRequest } from '@/lib/get-user';
+import { checkRateLimit, getRequestIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = getUserIdFromRequest(request);
+    if (!userId) return Response.json({ error: '请先登录或刷新页面' }, { status: 401 });
+    const limit = await checkRateLimit(`preview-save:${getRequestIp(request)}`, 20, 3600000);
+    if (!limit.allowed) return Response.json({ error: '请求过于频繁' }, { status: 429 });
     const { html, product_name } = await request.json();
 
     if (!html || html.length < 100) {

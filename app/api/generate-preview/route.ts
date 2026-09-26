@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { chatCompletionStream } from '@/lib/deepseek';
 import { initCredits, spendCredits } from '@/lib/credits';
 import { getUserIdFromRequest } from '@/lib/get-user';
+import { limitCostlyRequest } from '@/lib/rate-limit';
 
 const CONTEXT = `你是一个资深前端设计师。根据 PRD 为一个新产品生成精美的 Landing Page HTML，只输出 HTML 代码，用 <!-- HTML --> 和 <!-- END --> 包裹，不要有任何其他文字。
 
@@ -90,8 +91,10 @@ export async function POST(request: NextRequest) {
     // Credit check — preview costs 3 credits
     const clientId = getUserIdFromRequest(request) || '';
     if (!clientId) {
-      return Response.json({ error: '缺少用户标识' }, { status: 400 });
+      return Response.json({ error: '请先登录或刷新页面' }, { status: 401 });
     }
+    const limited = await limitCostlyRequest(request, 'generate-preview', clientId, 10);
+    if (limited) return limited;
     await initCredits(clientId);
     const deducted = await spendCredits(clientId, 3);
     if (!deducted) {

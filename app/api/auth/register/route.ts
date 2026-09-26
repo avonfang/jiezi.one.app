@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { registerUser } from '@/lib/auth-server';
-import { initCredits, getBalance } from '@/lib/credits';
 import { createToken } from '@/lib/auth-token';
+import { initCredits, transferLegacyAnonymousCredits } from '@/lib/credits';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -19,17 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await registerUser(email, password, name);
-
-    // Transfer credits from anonymous account if provided
-    if (anonymousId) {
-      await initCredits(anonymousId);
-      const anonBalance = await getBalance(anonymousId);
-      if (anonBalance > 0) {
-        const { addCredits } = await import('@/lib/credits');
-        await initCredits(result.userId);
-        await addCredits(result.userId, anonBalance);
-      }
-    }
+    await initCredits(result.userId);
+    await transferLegacyAnonymousCredits(result.userId, anonymousId);
 
     const token = createToken(result.userId);
     return Response.json({ success: true, userId: result.userId, name: name || email.split('@')[0], token });

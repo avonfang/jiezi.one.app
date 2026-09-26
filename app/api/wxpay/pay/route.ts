@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { createOrder, confirmOrder } from '@/lib/orders';
+import { createOrder } from '@/lib/orders';
 import { createXorpayPayment, getXorpayConfig } from '@/lib/xorpay';
 import { getWechatOpenid } from '@/lib/auth-server';
+import { getAuthenticatedUserIdFromRequest } from '@/lib/get-user';
 
 const PLANS: Record<string, { name: string; credits: number; price: string }> = {
   basic: { name: '体验装', credits: 7, price: '6.90' },
@@ -18,33 +19,28 @@ export async function POST(request: NextRequest) {
 
     const cfg = PLANS[plan];
     if (!cfg) return Response.json({ error: '无效的套餐' }, { status: 400 });
-    if (!userId) return Response.json({ error: '缺少用户标识' }, { status: 400 });
-
-    // Demo mode: auto-confirm when WeChat Pay credentials are not configured
-    const hasWeChatCreds = !!(process.env.WX_APPID && process.env.WX_SECRET);
-    if (!hasWeChatCreds) {
-      const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'demo');
-      await confirmOrder(order.id);
-      console.log(`Demo mode: auto-confirmed order ${order.id} for user ${userId} (no WX_APPID)`);
-      return Response.json({ success: true, orderId: order.id });
+    const authenticatedUserId = getAuthenticatedUserIdFromRequest(request);
+    if (!authenticatedUserId || (userId && userId !== authenticatedUserId)) {
+      return Response.json({ error: '请先登录后支付' }, { status: 401 });
     }
 
-    // Dev mode: auto-confirm when XORPay is not configured
+    const hasWeChatCreds = !!(process.env.WX_APPID && process.env.WX_SECRET);
+    if (!hasWeChatCreds) {
+      return Response.json({ error: '微信支付暂不可用' }, { status: 503 });
+    }
+
     let xorpayConfigured = false;
     try { getXorpayConfig(); xorpayConfigured = true; } catch {}
     if (!xorpayConfigured) {
-      const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'dev');
-      await confirmOrder(order.id);
-      console.log(`Dev mode: auto-confirmed order ${order.id} for user ${userId}`);
-      return Response.json({ success: true, orderId: order.id });
+      return Response.json({ error: '支付服务暂不可用' }, { status: 503 });
     }
 
-    const openid = await getWechatOpenid(userId);
+    const openid = await getWechatOpenid(authenticatedUserId);
     if (!openid) {
       return Response.json({ error: '用户未绑定微信' }, { status: 400 });
     }
 
-    const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'wxpay');
+    const order = await createOrder(authenticatedUserId, plan, cfg.credits, `¥${cfg.price}`, 'wxpay');
 
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
     const host = request.headers.get('host') || 'localhost:3000';
@@ -58,7 +54,7 @@ export async function POST(request: NextRequest) {
       order_id: order.id,
       notify_url: notifyUrl,
       openid,
-      more: JSON.stringify({ userId, plan }),
+      more: JSON.stringify({ userId: authenticatedUserId, plan }),
     });
 
     if (jsapiResult.status === 'ok' && jsapiResult.info?.package) {
@@ -82,7 +78,7 @@ export async function POST(request: NextRequest) {
       price: cfg.price,
       order_id: order.id,
       notify_url: notifyUrl,
-      more: JSON.stringify({ userId, plan }),
+      more: JSON.stringify({ userId: authenticatedUserId, plan }),
     });
 
     if (nativeResult.status !== 'ok') {

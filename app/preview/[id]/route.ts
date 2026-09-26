@@ -34,6 +34,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'public, max-age=3600',
+        'Content-Security-Policy': "sandbox; default-src 'none'; style-src 'unsafe-inline' https://jiezi.site; img-src data: https:; font-src data: https://jiezi.site",
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

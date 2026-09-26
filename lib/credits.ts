@@ -1,4 +1,13 @@
-import { kvGet, kvSet, kvUseCredits, kvUseCreditsOnce, kvAddCredits } from './kv-store';
+import { kvGet, kvSet, kvUseCredits, kvUseCreditsOnce, kvAddCredits, kvTransferLegacyCredits } from './kv-store';
+
+const LEGACY_ANON_CUTOFF = Date.parse('2026-09-28T00:00:00+08:00');
+
+export async function transferLegacyAnonymousCredits(userId: string, anonymousId: unknown): Promise<number> {
+  if (typeof anonymousId !== 'string' || anonymousId === userId) return 0;
+  if (!/^(?:[a-f0-9-]{36}|wx_[A-Za-z0-9]{10,50})$/i.test(anonymousId)) return 0;
+  await initCredits(userId);
+  return kvTransferLegacyCredits(creditKey(anonymousId), creditKey(userId), LEGACY_ANON_CUTOFF);
+}
 
 function creditKey(userId: string) {
   return `credits:${userId}`;

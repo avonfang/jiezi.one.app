@@ -2,26 +2,23 @@ import { NextRequest } from 'next/server';
 import { registerOrLoginByOpenid, getWechatProfile } from '@/lib/auth-server';
 import { createToken } from '@/lib/auth-token';
 import { getBalance } from '@/lib/credits';
+import { transferLegacyAnonymousCredits } from '@/lib/credits';
 
 const WX_APPID = process.env.WX_APPID;
 const WX_SECRET = process.env.WX_SECRET;
 
 async function codeToOpenid(code: string): Promise<string> {
   if (!WX_APPID || !WX_SECRET) {
-    // Dev mode: use a deterministic fake openid so mini program can test the flow
-    return `dev_openid_${code.slice(-12)}`;
+    throw new Error('微信登录服务未配置');
   }
 
   const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${WX_APPID}&secret=${WX_SECRET}&js_code=${code}&grant_type=authorization_code`;
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.errcode) {
-    console.warn('jscode2session failed, falling back to dev mode:', data.errcode, data.errmsg);
-    // Dev fallback: use a deterministic fake openid for testing codes
-    return `dev_openid_${code.slice(-12)}`;
+  if (!res.ok || data.errcode || !data.openid) {
+    throw new Error('微信登录凭证无效，请重试');
   }
-
   return data.openid as string;
 }
 
@@ -34,7 +31,8 @@ export async function POST(request: NextRequest) {
     }
 
     const openid = await codeToOpenid(code);
-    const { userId, isNew } = await registerOrLoginByOpenid(openid, anonymousId || undefined);
+    const { userId, isNew } = await registerOrLoginByOpenid(openid);
+    await transferLegacyAnonymousCredits(userId, anonymousId);
 
     const token = createToken(userId, 'user');
     const balance = await getBalance(userId);

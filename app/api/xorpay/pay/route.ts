@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createOrder } from '@/lib/orders';
 import { createXorpayPayment } from '@/lib/xorpay';
+import { getAuthenticatedUserIdFromRequest } from '@/lib/get-user';
 
 const PLANS: Record<string, { name: string; credits: number; price: string }> = {
   basic: { name: '体验装', credits: 7, price: '6.90' },
@@ -17,12 +18,15 @@ export async function POST(request: NextRequest) {
 
     const cfg = PLANS[plan];
     if (!cfg) return Response.json({ error: '无效的套餐' }, { status: 400 });
-    if (!userId) return Response.json({ error: '缺少用户标识' }, { status: 400 });
+    const authenticatedUserId = getAuthenticatedUserIdFromRequest(request);
+    if (!authenticatedUserId || (userId && userId !== authenticatedUserId)) {
+      return Response.json({ error: '请先登录后支付' }, { status: 401 });
+    }
 
     const payTypeValue = payType === 'alipay' ? 'alipay' : 'native';
 
     // Create local pending order
-    const order = await createOrder(userId, plan, cfg.credits, `¥${cfg.price}`, 'xorpay');
+    const order = await createOrder(authenticatedUserId, plan, cfg.credits, `¥${cfg.price}`, 'xorpay');
 
     // Build notify URL from the incoming request
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
       price: cfg.price,
       order_id: order.id,
       notify_url: notifyUrl,
-      more: JSON.stringify({ userId, plan }),
+      more: JSON.stringify({ userId: authenticatedUserId, plan }),
     });
 
     if (result.status !== 'ok') {

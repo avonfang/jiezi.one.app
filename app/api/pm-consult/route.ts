@@ -3,6 +3,7 @@ import { chatCompletion } from '@/lib/deepseek';
 import { spendCredit, initCredits } from '@/lib/credits';
 import type { ChatMessage, ValidationReport } from '@/lib/types';
 import { getUserIdFromRequest } from '@/lib/get-user';
+import { limitCostlyRequest } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,10 +24,12 @@ export async function POST(request: NextRequest) {
     const clientId = getUserIdFromRequest(request) || '';
     if (!clientId) {
       return Response.json(
-        { error: '缺少用户标识' },
-        { status: 400 }
+        { error: '请先登录或刷新页面' },
+        { status: 401 }
       );
     }
+    const limited = await limitCostlyRequest(request, 'pm-consult', clientId, 20);
+    if (limited) return limited;
 
     // Credit check
     await initCredits(clientId);

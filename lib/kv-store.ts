@@ -17,6 +17,62 @@ const kv: Redis | null = (() => {
 })();
 
 const mem = new Map<string, string>();
+const rateCounters = new Map<string, { count: number; resetAt: number }>();
+
+const RATE_LIMIT_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+return count
+`;
+
+const LEGACY_CREDIT_TRANSFER_SCRIPT = `
+local source = redis.call('GET', KEYS[1])
+local target = redis.call('GET', KEYS[2])
+if not source or not target then return 0 end
+local old = cjson.decode(source)
+local account = cjson.decode(target)
+if tonumber(old.created_at or 0) <= 0 or tonumber(old.created_at) >= tonumber(ARGV[1]) then return 0 end
+local amount = tonumber(old.balance or 0)
+if amount <= 0 then return 0 end
+old.balance = 0
+account.balance = tonumber(account.balance or 0) + amount
+redis.call('SET', KEYS[1], cjson.encode(old))
+redis.call('SET', KEYS[2], cjson.encode(account))
+return amount
+`;
+
+export async function kvTransferLegacyCredits(sourceKey: string, targetKey: string, cutoff: number): Promise<number> {
+  if (kv) {
+    const result = await kv.eval(LEGACY_CREDIT_TRANSFER_SCRIPT, [sourceKey, targetKey], [String(cutoff)]);
+    return Number(result);
+  }
+  const source = mem.get(sourceKey);
+  const target = mem.get(targetKey);
+  if (!source || !target) return 0;
+  const old = JSON.parse(source) as { balance: number; created_at: number };
+  const account = JSON.parse(target) as { balance: number };
+  if (!old.created_at || old.created_at >= cutoff || old.balance <= 0) return 0;
+  const amount = old.balance;
+  old.balance = 0;
+  account.balance += amount;
+  mem.set(sourceKey, JSON.stringify(old));
+  mem.set(targetKey, JSON.stringify(account));
+  return amount;
+}
+
+export async function kvRateLimit(key: string, windowMs: number): Promise<number> {
+  if (kv) {
+    const count = await kv.eval(RATE_LIMIT_SCRIPT, [key], [String(windowMs)]);
+    return Number(count);
+  }
+  const now = Date.now();
+  const current = rateCounters.get(key);
+  const next = !current || now >= current.resetAt
+    ? { count: 1, resetAt: now + windowMs }
+    : { count: current.count + 1, resetAt: current.resetAt };
+  rateCounters.set(key, next);
+  return next.count;
+}
 
 export async function kvGet<T = unknown>(key: string): Promise<T | null> {
   if (kv) {

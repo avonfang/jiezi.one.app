@@ -49,7 +49,7 @@ export default function CreditBadge() {
         href="/pricing"
         className="text-xs rounded-full px-3 py-1.5 font-medium transition-all" style={{color:'#4F8BFF', background:'rgba(79,139,255,0.08)', border:'1px solid rgba(79,139,255,0.15)', backdropFilter:'blur(8px)'}}
       >
-        注册送 30 积分
+        注册送 50 积分
       </a>
     );
   }

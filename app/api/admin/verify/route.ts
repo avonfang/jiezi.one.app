@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { checkAdminAuth } from '@/lib/admin-auth';
+import { checkAdminAuth, isAdminPassword } from '@/lib/admin-auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { password } = await request.json();
-    if (checkAdminAuth(request) || password === (process.env.ADMIN_PASSWORD || 'jiezi123')) {
+    if (checkAdminAuth(request) || isAdminPassword(password)) {
       return Response.json({ success: true });
     }
     return Response.json({ error: '密码错误' }, { status: 401 });
