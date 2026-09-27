@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { getClientId, getUsername, isLoggedIn, logout, getAuthHeaders } from '@/lib/client-id';
+import { getClientId, getUsername, logout, getAuthHeaders } from '@/lib/client-id';
 
 const NAV_ITEMS = [
   { href: '/app', label: '新建验证', icon: '✏️' },
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/app/xumi', label: '须弥', icon: '🔮' },
   { href: '/zhixian', label: '仙人指路', icon: '🧭' },
   { href: '/app/inspiration', label: '灵感市集', icon: '💡' },
+  { href: '/learn', label: 'AI 教程', icon: '📚' },
   { href: '/app/contact', label: '联系我们', icon: '💬' },
   { href: '/app/settings', label: '我的', icon: '👤' },
 ];
@@ -20,12 +21,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    setUserName(getUsername());
-    refreshCredits();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Refresh credits
   const refreshCredits = useCallback(() => {
@@ -37,6 +32,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     }
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setUserName(getUsername());
+      refreshCredits();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshCredits]);
 
   // Re-read username after login (when returning from settings)
   useEffect(() => {
