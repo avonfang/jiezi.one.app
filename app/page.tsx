@@ -201,33 +201,11 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [sampleIdea, setSampleIdea] = useState('');
-  const [lastIdea, setLastIdea] = useState(() => {
-    try {
-      const saved = localStorage.getItem('jiezi-full-report');
-      if (saved) return JSON.parse(saved).idea || '';
-    } catch { /* ignore */ }
-    return '';
-  });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(() => {
-    try {
-      const saved = localStorage.getItem('jiezi-full-report');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.idea && parsed.report ? 'success' : 'idle';
-      }
-    } catch { /* ignore */ }
-    return 'idle';
-  });
-  const [report, setReport] = useState<ValidationReport | null>(() => {
-    try {
-      const saved = localStorage.getItem('jiezi-full-report');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.report || null;
-      }
-    } catch { /* ignore */ }
-    return null;
-  });
+  // The homepage is always a fresh starting point. The saved report is restored
+  // in /app instead; reading localStorage during render also breaks hydration.
+  const [lastIdea, setLastIdea] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [report, setReport] = useState<ValidationReport | null>(null);
   const [error, setError] = useState('');
   const [loadingStage, setLoadingStage] = useState('extracting');
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -390,8 +368,10 @@ export default function Home() {
   };
 
   const handleReset = () => {
+    try { localStorage.removeItem('jiezi-full-report'); } catch { /* storage unavailable */ }
     setStatus('idle');
     setReport(null);
+    setLastIdea('');
     setError('');
     setSampleIdea('');
   };

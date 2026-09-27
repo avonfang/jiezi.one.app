@@ -399,8 +399,10 @@ export default function AppPage() {
   };
 
   const handleReset = () => {
+    try { localStorage.removeItem('jiezi-full-report'); } catch { /* storage unavailable */ }
     setStatus('idle');
     setReport(null);
+    setIdea('');
     setPrd(null);
     setPreview(null);
     setView('report');
