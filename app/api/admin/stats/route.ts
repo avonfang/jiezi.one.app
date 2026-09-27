@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { kvGet, kvScard } from '@/lib/kv-store';
 import { checkAdminAuth } from '@/lib/admin-auth';
+import { listRegisteredUsers } from '@/lib/admin-users';
 
 function dayStr(d = new Date()): string {
   const y = d.getFullYear();
@@ -21,8 +22,7 @@ export async function GET(request: NextRequest) {
     const totalUv = await kvScard('stats:uv:all');
     const todayUv = await kvScard('stats:uv:' + today);
 
-    const users = await kvGet<Record<string, unknown>>('auth:users');
-    const registeredUsers = users ? Object.keys(users).length : 0;
+    const registeredUsers = (await listRegisteredUsers()).length;
 
     // 近 7 天全站访问趋势
     const days = [];

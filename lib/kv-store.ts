@@ -184,6 +184,30 @@ export async function kvUseCreditsOnce(
   mem.set(entitlementKey, JSON.stringify({ created_at: createdAt, amount }));
   return record.balance;
 }
+
+// Admin reports must distinguish an empty result from a failed Redis read.
+export async function kvGetStrict<T = unknown>(key: string): Promise<T | null> {
+  if (kv) return kv.get<T>(key);
+  if (process.env.VERCEL_ENV === 'production') throw new Error('KV 未配置');
+  const val = mem.get(key);
+  return val ? JSON.parse(val) as T : null;
+}
+
+export async function kvScanKeys(pattern: string): Promise<string[]> {
+  if (kv) {
+    const keys = new Set<string>();
+    let cursor = '0';
+    do {
+      const [next, batch] = await kv.scan(cursor, { match: pattern, count: 100 });
+      batch.forEach(key => keys.add(key));
+      cursor = next;
+    } while (cursor !== '0');
+    return [...keys];
+  }
+  if (process.env.VERCEL_ENV === 'production') throw new Error('KV 未配置');
+  const prefix = pattern.endsWith('*') ? pattern.slice(0, -1) : pattern;
+  return [...mem.keys()].filter(key => key.startsWith(prefix));
+}
 export async function kvUseCredits(key: string, amount: number): Promise<number> {
   if (kv) {
     try {

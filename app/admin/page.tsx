@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import AdminTutorials from '@/components/AdminTutorials';
 
 function AdminLogin({ onLogin }: { onLogin: (password: string) => void }) {
@@ -90,10 +91,11 @@ interface FeedbackItem {
 }
 
 interface RegisteredUser {
-  email: string;
+  email: string | null;
   userId: string;
   name: string;
   createdAt: number;
+  source: 'email' | 'wechat';
 }
 
 interface ZhixianStats {
@@ -137,11 +139,13 @@ export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
   const [genPlan, setGenPlan] = useState('triple');
   const [genCount, setGenCount] = useState(5);
   const [genResult, setGenResult] = useState<ActivationCode[] | null>(null);
   const [tab, setTab] = useState<Tab>('codes');
   const [stats, setStats] = useState<Stats | null>(null);
+  const [statsError, setStatsError] = useState('');
 
   // Credits lookup
   const [lookupUserId, setLookupUserId] = useState('');
@@ -175,17 +179,30 @@ export default function AdminPage() {
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
+    setUsersError('');
     try {
       const res = await adminFetch('/api/admin/users');
       const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '用户数据加载失败');
       setUsers(d.users || []);
+    } catch (error) {
+      setUsersError(error instanceof Error ? error.message : '用户数据加载失败');
     } finally {
       setUsersLoading(false);
     }
   }, [adminFetch]);
 
-  const loadStats = useCallback(() => {
-    adminFetch('/api/admin/stats').then((r) => r.json()).then((d) => setStats(d)).catch(() => {});
+  const loadStats = useCallback(async () => {
+    setStatsError('');
+    try {
+      const res = await adminFetch('/api/admin/stats');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '统计加载失败');
+      setStats(data);
+    } catch (error) {
+      setStats(null);
+      setStatsError(error instanceof Error ? error.message : '统计加载失败');
+    }
   }, [adminFetch]);
 
   const handleLogin = (password: string) => {
@@ -194,13 +211,17 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (authed) {
-      loadOrders(); loadCodes(); loadFeedbacks(); loadUsers();
-    }
+    if (!authed) return;
+    const timer = window.setTimeout(() => {
+      loadOrders(); loadCodes(); loadFeedbacks(); void loadUsers();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [authed, loadOrders, loadCodes, loadFeedbacks, loadUsers]);
 
   useEffect(() => {
-    if (authed && tab === 'stats') loadStats();
+    if (!authed || tab !== 'stats') return;
+    const timer = window.setTimeout(() => void loadStats(), 0);
+    return () => window.clearTimeout(timer);
   }, [authed, tab, loadStats]);
 
   const handleConfirm = async (orderId: string) => {
@@ -279,7 +300,7 @@ export default function AdminPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <a href="/" className="text-xs text-gray-400 hover:text-gray-600 mr-3">← 返回首页</a>
+            <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 mr-3">← 返回首页</Link>
             <h1 className="text-xl font-bold text-gray-900 inline">管理后台</h1>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -303,13 +324,15 @@ export default function AdminPage() {
             <div className="rounded-xl p-5 mb-6" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.15), 0 8px 40px rgba(79,139,255,0.06), 0 2px 8px rgba(0,0,0,0.03)'}}>
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-semibold text-gray-900">注册用户</h2>
-                <span className="text-sm text-gray-500">共 {users.length} 人</span>
+                <span className="text-sm text-gray-500">共 {usersError ? '—' : users.length} 人</span>
               </div>
               <p className="text-xs text-gray-400 mb-4">
-                数据来源：KV 存储 auth:users —— 仅包含通过邮箱注册的用户
+                统计邮箱与微信注册账号，不包含匿名访客；与「统计」页注册用户数口径一致。
               </p>
               {usersLoading ? (
                 <p className="text-sm text-gray-400 py-4 text-center">加载中...</p>
+              ) : usersError ? (
+                <p role="alert" className="text-sm text-red-600 py-4 text-center">{usersError}，请点击刷新重试</p>
               ) : users.length === 0 ? (
                 <p className="text-sm text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">暂无注册用户</p>
               ) : (
@@ -317,6 +340,7 @@ export default function AdminPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 text-left text-gray-500">
+                        <th className="pb-2 font-medium">账号类型</th>
                         <th className="pb-2 font-medium">邮箱</th>
                         <th className="pb-2 font-medium">昵称</th>
                         <th className="pb-2 font-medium">注册时间</th>
@@ -326,7 +350,8 @@ export default function AdminPage() {
                     <tbody>
                       {users.map((u, i) => (
                         <tr key={i} className="border-b border-gray-50 text-gray-700">
-                          <td className="py-2.5 pr-4">{u.email}</td>
+                          <td className="py-2.5 pr-4">{u.source === 'wechat' ? '微信' : '邮箱'}</td>
+                          <td className="py-2.5 pr-4">{u.email || '—'}</td>
                           <td className="py-2.5 pr-4">{u.name}</td>
                           <td className="py-2.5 pr-4 text-gray-400">{new Date(u.createdAt).toLocaleString('zh-CN')}</td>
                           <td className="py-2.5 text-gray-400 text-xs font-mono break-all max-w-[160px]">{u.userId}</td>
@@ -527,6 +552,7 @@ export default function AdminPage() {
         {/* ====== Stats Tab ====== */}
         {tab === 'stats' && (
           <div>
+            {statsError && <p role="alert" className="mb-4 text-sm text-red-600">{statsError}，请点击下方刷新重试</p>}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
                 <div className="text-xs text-gray-500">总访问次数</div>
@@ -546,7 +572,8 @@ export default function AdminPage() {
               </div>
               <div className="rounded-xl p-5" style={{background:'rgba(255,255,255,0.3)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(255,255,255,0.45)', boxShadow:'inset 0 1.5px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(79,139,255,0.06)'}}>
                 <div className="text-xs text-gray-500">注册用户数</div>
-                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.registeredUsers ?? 0}</div>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.registeredUsers ?? '—'}</div>
+                <div className="mt-1 text-[11px] text-gray-400">邮箱 + 微信；不含匿名访客</div>
               </div>
               <div className="rounded-xl p-5" style={{background:'rgba(83,74,183,0.08)', backdropFilter:'blur(28px) saturate(160%) contrast(1.02)', border:'1px solid rgba(83,74,183,0.2)'}}>
                 <div className="text-xs text-gray-500">充值订单</div>
