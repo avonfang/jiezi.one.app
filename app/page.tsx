@@ -9,6 +9,7 @@ import AuthModal from '@/components/AuthModal';
 import CreditBadge from '@/components/CreditBadge';
 import { getClientId, getUsername, getAuthHeaders } from '@/lib/client-id';
 import type { ValidationReport } from '@/lib/types';
+import type { Tutorial } from '@/lib/tutorial-types';
 
 const SAMPLE_IDEAS = [
   '我想做一个 AI 记账工具，自动分析微信和支付宝账单',
@@ -17,14 +18,12 @@ const SAMPLE_IDEAS = [
   '我想做一个 AI 育儿助手，记录宝宝喂奶和睡觉数据，给新手爸妈养育建议',
 ];
 
-const AI_TUTORIALS = [
-  { title: '零基础 3 步让 AI 写出能发的小红书文案', cat: '上手实操', emoji: '✍️', mins: '5 分钟', cls: 'bg-teal-50 text-teal-600' },
-  { title: 'Prompt 万能公式：角色+任务+对象+风格', cat: 'Prompt 技巧', emoji: '🪄', mins: '6 分钟', cls: 'bg-violet-50 text-violet-600' },
-  { title: '不会 PS 也能做图：一句话生成封面海报', cat: '上手实操', emoji: '🎨', mins: '4 分钟', cls: 'bg-teal-50 text-teal-600' },
-  { title: '2026 普通人用 AI 搞钱的 5 个方向', cat: 'AI 副业', emoji: '💰', mins: '8 分钟', cls: 'bg-orange-50 text-orange-600' },
-  { title: '怎么和 AI 对话？先别把它当搜索引擎', cat: 'AI 入门', emoji: '🧠', mins: '4 分钟', cls: 'bg-blue-50 text-blue-600' },
-  { title: '用一个想法，让 AI 判断值不值得做', cat: 'AI 副业', emoji: '💡', mins: '6 分钟', cls: 'bg-orange-50 text-orange-600' },
-]
+const TUTORIAL_COLORS: Record<string, string> = {
+  'AI 入门': 'bg-blue-50 text-blue-600',
+  '上手实操': 'bg-teal-50 text-teal-600',
+  'Prompt 技巧': 'bg-violet-50 text-violet-600',
+  'AI 副业': 'bg-orange-50 text-orange-600',
+};
 
 
 const verdictStyles: Record<string, string> = {
@@ -239,6 +238,7 @@ export default function Home() {
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const fullReportRef = useRef<HTMLDivElement>(null);
   const [recentRecords, setRecentRecords] = useState<{ id: string; idea: string; verdict: string; market_score: number; feasibility_score: number; target_users: string; report: ValidationReport; created_at: number }[]>([]);
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -266,6 +266,10 @@ export default function Home() {
     fetch('/api/recent-validations?limit=6')
       .then(res => res.json())
       .then(data => setRecentRecords(data.records || []))
+      .catch(() => {});
+    fetch('/api/tutorials', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => setTutorials(data.tutorials || []))
       .catch(() => {});
   }, []);
 
@@ -840,9 +844,9 @@ export default function Home() {
                 <a href="/learn" className="text-xs font-medium text-[#2564F8] whitespace-nowrap shrink-0">查看全部 →</a>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {AI_TUTORIALS.map((t, i) => (
-                  <a key={i} href="/learn" className="bg-white border border-[#E9E9ED] rounded-xl p-4 flex gap-3 hover:border-[#D6D7DC] transition-colors group">
-                    <span className={"shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg " + t.cls}>{t.emoji}</span>
+                {tutorials.slice(0, 6).map((t) => (
+                  <a key={t.id} href={'/learn?post=' + encodeURIComponent(t.id)} className="bg-white border border-[#E9E9ED] rounded-xl p-4 flex gap-3 hover:border-[#D6D7DC] transition-colors group">
+                    <span className={"shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg " + (TUTORIAL_COLORS[t.cat] || 'bg-gray-50 text-gray-600')}>{t.emoji}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[11px] text-gray-400">{t.cat}</span>

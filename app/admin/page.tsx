@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import AdminTutorials from '@/components/AdminTutorials';
 
 function AdminLogin({ onLogin }: { onLogin: (password: string) => void }) {
   const [pw, setPw] = useState('');
@@ -126,7 +127,7 @@ const PLAN_NAMES: Record<string, string> = {
   ten: '10 积分',
 };
 
-type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits' | 'stats';
+type Tab = 'users' | 'codes' | 'orders' | 'feedback' | 'credits' | 'stats' | 'tutorials';
 
 export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState('');
@@ -282,7 +283,7 @@ export default function AdminPage() {
             <h1 className="text-xl font-bold text-gray-900 inline">管理后台</h1>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {([['users', '用户'], ['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数'], ['stats', '统计']] as [Tab, string][]).map(([key, label]) => (
+            {([['tutorials', 'AI 教程'], ['users', '用户'], ['codes', '激活码'], ['orders', '订单'], ['feedback', '反馈'], ['credits', '用户次数'], ['stats', '统计']] as [Tab, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -293,6 +294,8 @@ export default function AdminPage() {
             ))}
           </div>
         </div>
+
+        {tab === 'tutorials' && <AdminTutorials adminFetch={adminFetch} />}
 
         {/* ====== Users Tab ====== */}
         {tab === 'users' && (
