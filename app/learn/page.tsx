@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Tutorial } from '@/lib/tutorial-types';
+import TutorialBody from '@/components/TutorialBody';
 
 const CATS = ['全部', 'AI 入门', '上手实操', 'Prompt 技巧', 'AI 副业'];
 const CAT_CLASS: Record<string, string> = {
@@ -42,14 +44,14 @@ export default function LearnPage() {
     <main className="min-h-screen bg-[#F2F2F4]">
       <header className="h-16 bg-[#FAFAFC] border-b border-[#E9E9ED] sticky top-0 z-50 flex items-center">
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between w-full">
-          <a href="/" className="flex items-center gap-2 font-semibold text-[#14151C]">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-[#14151C]">
             <span className="w-7 h-7 rounded-md bg-gradient-to-br from-[#2564F8] to-[#615CED] text-white flex items-center justify-center text-sm font-bold">芥</span>
             芥子
-          </a>
+          </Link>
           <div className="flex items-center gap-5">
-            <a href="/" className="text-sm text-gray-500 hover:text-gray-900">首页</a>
-            <a href="/zhixian" className="text-sm text-gray-500 hover:text-gray-900">仙人指路</a>
-            <a href="/app" className="text-sm text-gray-500 hover:text-gray-900">想法验证</a>
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">首页</Link>
+            <Link href="/zhixian" className="text-sm text-gray-500 hover:text-gray-900">仙人指路</Link>
+            <Link href="/app" className="text-sm text-gray-500 hover:text-gray-900">想法验证</Link>
           </div>
         </div>
       </header>
@@ -63,9 +65,11 @@ export default function LearnPage() {
             <div className="flex items-center gap-3 mt-3 pb-5 mb-2 border-b border-gray-100 text-xs text-gray-400">
               <span>⏱ {post.mins}</span>
             </div>
-            {post.paras.map((p, i) => (
-              <p key={i} className="text-[15px] text-gray-700 leading-relaxed mt-4">{p}</p>
-            ))}
+            {post.content
+              ? <TutorialBody content={post.content} />
+              : post.paras.map((p, i) => (
+                <p key={i} className="text-[15px] text-gray-700 leading-relaxed mt-4">{p}</p>
+              ))}
             {post.prompt && (
               <div className="mt-5 bg-[#F5F7FF] border border-[#DCE3FF] border-l-4 border-l-[#2564F8] rounded-lg px-4 py-3 text-sm text-gray-800 leading-relaxed">
                 {post.prompt}
@@ -83,7 +87,7 @@ export default function LearnPage() {
               <div className="text-sm font-semibold text-[#14151C]">学完这篇，去把你的想法变成现实</div>
               <div className="text-xs text-gray-400 mt-1">用芥子验证市场方向、生成 PRD 和产品预览页</div>
             </div>
-            <a href="/" className="bg-[#06111A] text-white text-sm rounded-full px-5 py-2.5 whitespace-nowrap">去验证想法 →</a>
+            <Link href="/" className="bg-[#06111A] text-white text-sm rounded-full px-5 py-2.5 whitespace-nowrap">去验证想法 →</Link>
           </div>
         </div>
       ) : (

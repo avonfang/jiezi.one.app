@@ -7,6 +7,7 @@ export type Tutorial = {
   mins: string;
   title: string;
   desc: string;
+  content?: string;
   paras: string[];
   prompt?: string;
   task: string[];
